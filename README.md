@@ -1,4 +1,4 @@
-### AverageDatabase (AvgDB)
+### AverageDB
 
 The only database built from the ground for the average developer.
 
