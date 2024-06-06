@@ -19,7 +19,7 @@ const tiers = [
     description: "Just enough to put a side project on your resume",
     features: ["1kb payloads", "No SLA im on vacation"],
     featured: false,
-    cta: "Get API key",
+    cta: "Get API key (coming soon)",
   },
   {
     name: `"Startups"`,
@@ -37,7 +37,7 @@ const tiers = [
       "Marketing automations",
     ],
     featured: false,
-    cta: "Get API key",
+    cta: "Get API key (coming soon)",
   },
   {
     name: "Enterprise",
@@ -55,7 +55,7 @@ const tiers = [
       "Custom reporting tools",
     ],
     featured: true,
-    cta: "Contact sales",
+    cta: "Get API key (coming soon) sales",
   },
 ];
 

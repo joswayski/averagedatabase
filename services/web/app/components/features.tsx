@@ -3,33 +3,23 @@ import { CheckIcon } from "@heroicons/react/20/solid";
 const features = [
   {
     name: "Serverless",
-    description: "This one keyword got us an extra 10 million from Sequoia",
+    description: "This one keyword got us an extra 10 million in funding",
   },
-  {
-    name: "Search",
-    description:
-      "You're going to %like% the way your results look, we guarantee it",
-  },
+  //   {
+  //     name: "Search",
+  //     description:
+  //       "You're going to %like% the way your results look, we guarantee it",
+  //   },
+  //   {
+  //     name: "Vectors/Embeddings",
+  //     description:
+  //       "Sam somehow got involved in our cap table so we have add this in to keep feeding his god machine",
+  //   },
+  //   {
+  //     name: "GraphQL",
+  //     description: "Look at you you little freak.. you got giddy didn't you..",
+  //   },
 
-  {
-    name: "Vectors/Embeddings",
-    description:
-      "Sam somehow got involved in our cap table so we have add this in to keep feeding his god machine",
-  },
-  {
-    name: "GraphQL",
-    description: "Look at you you little freak.. you got giddy didn't you..",
-  },
-  {
-    name: "Key/Value",
-    description:
-      "Quae sit sunt excepturi fugit veniam voluptatem ipsum commodi.",
-  },
-  {
-    name: "Reporting",
-    description:
-      "Eos laudantium repellat sed architecto earum unde incidunt. Illum sit dolores voluptatem.",
-  },
   {
     name: "Written in 100% Rust",
     description: "Blazingly fast",
@@ -38,6 +28,11 @@ const features = [
     name: "Real-time*",
     description:
       "*Within a few hundred milliseconds you'll see your data as long as you make a properly formatted request most of the time if it's still there",
+  },
+  {
+    name: "K/V",
+    description:
+      "It's like Redis®* (*Redis is a registered trademark of Redis Ltd. Any rights therein are reserved to Redis Ltd. Any use by Average Labs LLC is for referential purposes only and does not indicate any sponsorship, endorsement or affiliation between Redis and Average Labs LLC) but less ********",
   },
 ];
 
