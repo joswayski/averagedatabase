@@ -69,7 +69,7 @@ if (viteDevServer) {
     "/assets",
     express.static("build/client/assets", {
       immutable: true,
-      // maxAge: "1y",
+      maxAge: "1y",
     })
   );
 }

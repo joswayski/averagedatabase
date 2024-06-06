@@ -83,8 +83,9 @@ export function BarCharts() {
         <h1 className="font-bold text-xl text-center py-4">
           The numbers don&apos;t lie.
         </h1>
-        <div className="lg:block hidden ml-6">
-          <ResponsiveContainer width="99%" aspect={4}>
+        <div className="lg:flex hidden justify-center">
+          <img src="horizontal.png" height={800} width={800} alt="boop"></img>
+          {/* <ResponsiveContainer width="99%" aspect={4}>
             <BarChart data={data}>
               <Legend z={"Higher is better"} />
               <XAxis
@@ -106,10 +107,13 @@ export function BarCharts() {
               <Bar dataKey="Performance" fill="#4f45e4" radius={[4, 4, 0, 0]} />
               <Bar dataKey="Cost" fill="#F87315" radius={[4, 4, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer> */}
         </div>
+
         <div className="lg:hidden  flex justify-center w-full">
-          <ResponsiveContainer width={"99%"} aspect={1}>
+          <img src="vertical.png" height={500} width={500} alt="beep"></img>
+
+          {/* <ResponsiveContainer width={"99%"} aspect={1}>
             <BarChart
               data={data}
               layout="vertical"
@@ -139,7 +143,7 @@ export function BarCharts() {
               <Bar dataKey="Performance" fill="#4f45e4" radius={[4, 4, 0, 0]} />
               <Bar dataKey="Cost" fill="#F87315" radius={[4, 4, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer> */}
         </div>
       </div>
     </div>
