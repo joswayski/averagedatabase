@@ -16,7 +16,8 @@ const tiers = [
       annually: "$0",
     },
     hideFrequency: false,
-    description: "Just enough to put a side project on your resume",
+    description:
+      "Just enough to put a side project on your resume before your next FAANG gig",
     features: [
       "1kb payloads",
       "Discord / Twitter reply guy support",
@@ -26,17 +27,22 @@ const tiers = [
     cta: "Get API key (coming soon)",
   },
   {
-    name: `"Startups"`,
+    name: (
+      <span>
+        &quot;Startups&quot; <span className="text-orange-500">PRO</span>
+      </span>
+    ),
     id: "tier-startup",
     href: "#",
-    price: { monthly: "$30", annually: "$288" },
+    price: { monthly: "$39", annually: "$279" },
     description:
       "You're trying to get into YC and haven't setup proper accounting yet",
     features: [
       "4kb payloads",
       "Dashboard to login & view your account info",
       "More data types (number, boolean)",
-      "No longer get ads in your results",
+      "AverageDB Boost™ - Reduce random request delay by up to 50%",
+      "ACID compliance available as a paid addon",
     ],
     featured: false,
     cta: "Get API key (coming soon)",
@@ -46,14 +52,17 @@ const tiers = [
     id: "tier-enterprise",
     href: "#",
     price: "Custom",
+    priceSubtext: "Tell us what you can afford and we will tell you our price",
     description:
       "Send us the stupid questionnaire from your legal team we don't have SOC2 if it isn't obvious",
     features: [
-      "$5,000 SSO addon (required)",
-      "Dedicated email support\n\n\n(Mon-Fri 8am-1pm & 1pm-4pm Tokyo time)",
+      "$2,000/mo SSO addon (required)",
+      "Dedicated email support\n\n\n(Mon-Fri 9am-12pm & 2pm-4pm Tokyo time)",
+      "Indexes available as a paid addon ($100/per)",
+      "Backups (lol)",
     ],
     featured: true,
-    cta: "Get API key (coming soon) sales",
+    cta: "Get API key (coming soon)",
   },
 ];
 
@@ -65,7 +74,10 @@ export const Pricing = () => {
   const [frequency, setFrequency] = useState(frequencies[0]);
 
   return (
-    <div className=" py-24 sm:py-32 bg-white" id="pricing">
+    <div
+      className="  py-24 sm:py-32 bg-gradient-to-b from-white to-slate-300"
+      id="pricing"
+    >
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
@@ -138,6 +150,7 @@ export const Pricing = () => {
                     ? tier.price
                     : tier.price[frequency.value]}
                 </span>
+
                 {tier?.hideFrequency ? null : typeof tier.price !== "string" ? (
                   <span
                     className={classNames(
@@ -149,14 +162,20 @@ export const Pricing = () => {
                   </span>
                 ) : null}
               </p>
+              {tier.priceSubtext ? (
+                <span className="text-gray-500 text-xs">
+                  {tier.priceSubtext}
+                </span>
+              ) : null}
               <a
                 href={tier.href}
+                onClick={(e) => e.preventDefault()}
                 aria-describedby={tier.id}
                 className={classNames(
                   tier.featured
                     ? "bg-white/10 text-white hover:bg-white/20 focus-visible:outline-white"
                     : "bg-indigo-600 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-indigo-600",
-                  "mt-6 block rounded-md py-2 px-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                  "mt-6 hover:cursor-not-allowed block rounded-md py-2 px-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                 )}
               >
                 {tier.cta}

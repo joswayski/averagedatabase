@@ -18,8 +18,8 @@ export default function WeRich() {
           What up broke boi
         </h1>
         <p className="mt-6 text-xl leading-8">
-          We just <span className="line-through text-gray-300	">conned</span>{" "}
-          convinced our wonderful VCs to give us a bridge round before our free
+          We just con<span className="line-through text-gray-300	">ned</span>
+          vinced our wonderful VCs to give us a bridge round before our free
           users put us in the dirt for good. You might be wondering what
           we&apos;re going to use the money for, so this poast is to explain
           exactly that:
@@ -40,9 +40,8 @@ export default function WeRich() {
                 <strong className="font-semibold text-gray-900">
                   Bribing Youtubers.
                 </strong>{" "}
-                We all know the next generation of SaaS will be sold bottom up .
-                We&apos;re going to pay some influencers to make some videos
-                about us.
+                It&apos; the only way to grow the bottom of the funnel these
+                days.
               </span>
             </li>
             <li className="flex gap-x-3">
@@ -52,7 +51,7 @@ export default function WeRich() {
                   Dark mode.
                 </strong>{" "}
                 There is literally nothing on the roadmap more important than
-                this.
+                this. We have 16 sprints planned to get this done.
               </span>
             </li>
             <li className="flex gap-x-3">
@@ -67,10 +66,9 @@ export default function WeRich() {
             </li>
           </ul>
           <p className="mt-8">
-            I hope this makes it clear what our roadmap for the next year will
-            be. Our users have been adamant that we need to focus on the core
-            product, but we think that&apos;s a little boring. We&aposre going
-            to focus on writing a lot of blog posts and making some videos.
+            I hope this makes it clear what our roadmap is going forward. To all
+            of our users, thank you for being part of this journey with us. To
+            our enterprise customers, thank fucking god you&apos;re here.
           </p>
           <h2 className="mt-16 text-2xl font-bold tracking-tight text-gray-900">
             From beginner to expert in 3 hours

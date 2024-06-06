@@ -31,14 +31,24 @@ const features = [
   },
   {
     name: "K/V",
-    description:
-      "It's like Redis®* (*Redis is a registered trademark of Redis Ltd. Any rights therein are reserved to Redis Ltd. Any use by Average Labs LLC is for referential purposes only and does not indicate any sponsorship, endorsement or affiliation between Redis and Average Labs LLC) but less ********",
+    description: (
+      <p>
+        It&apos;s like Redis®* (
+        <span className="italic">
+          *Redis is a registered trademark of Redis Ltd. Any rights therein are
+          reserved to Redis Ltd. Any use by Average Labs LLC is for referential
+          purposes only and does not indicate any sponsorship, endorsement or
+          affiliation between Redis and Average Labs LLC
+        </span>
+        ) but less ********
+      </p>
+    ),
   },
 ];
 
 export const Features = () => {
   return (
-    <div className="bg-slate-100 py-24 sm:py-32">
+    <div className="bg-slate-100 py-24 sm:py-32 bg-gradient-to-b from-white to-indigo-100">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto grid max-w-2xl grid-cols-1 gap-x-8 gap-y-16 sm:gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-3">
           <div>
