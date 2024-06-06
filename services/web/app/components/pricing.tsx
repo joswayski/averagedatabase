@@ -8,12 +8,12 @@ const frequencies = [
 ];
 const tiers = [
   {
-    name: "Indie Hackers (poors)",
+    name: "Indie Hackers (le poors)",
     id: "tier-freelancer",
     href: "#",
     price: {
       monthly: "$0",
-      annually: "$0 (FREE!!) USE US NOW PLEASE",
+      annually: "$0",
     },
     hideFrequency: false,
     description: "Just enough to put a side project on your resume",
@@ -75,8 +75,7 @@ export const Pricing = () => {
           </p>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
-          Distinctio et nulla eum soluta et neque labore quibusdam. Saepe et
-          quasi iusto modi velit ut non voluptas in. Explicabo id ut laborum.
+          Get in now before we IPO because it&apos;s going to be a shitshow
         </p>
         <div className="mt-16 flex justify-center">
           <fieldset aria-label="Payment frequency">
