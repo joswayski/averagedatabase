@@ -35,10 +35,8 @@ const tiers = [
     features: [
       "4kb payloads",
       "Dashboard to login & view your account info",
+      "More data types (number, boolean)",
       "No longer get ads in your results",
-      "Advanced analytics",
-      "24-hour support response time",
-      "Marketing automations",
     ],
     featured: false,
     cta: "Get API key (coming soon)",
@@ -51,12 +49,8 @@ const tiers = [
     description:
       "Send us the stupid questionnaire from your legal team we don't have SOC2 if it isn't obvious",
     features: [
-      "Unlimited products",
-      "Unlimited subscribers",
-      "Advanced analytics",
-      "1-hour, dedicated support response time",
-      "Marketing automations",
-      "Custom reporting tools",
+      "$5,000 SSO addon (required)",
+      "Dedicated email support\n\n\n(Mon-Fri 8am-1pm & 1pm-4pm Tokyo time)",
     ],
     featured: true,
     cta: "Get API key (coming soon) sales",

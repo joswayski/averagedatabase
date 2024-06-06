@@ -22,7 +22,7 @@ export default function WeRich() {
           convinced our wonderful VCs to give us a bridge round before our free
           users put us in the dirt for good. You might be wondering what
           we&apos;re going to use the money for, so this poast is to explain
-          exactly that.
+          exactly that:
         </p>
         <div className="mt-10 max-w-2xl">
           {/* <p>
