@@ -11,12 +11,15 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@hono/node-server": "^1.11.2",
     "@remix-run/node": "^2.9.2",
     "@remix-run/react": "^2.9.2",
     "@remix-run/serve": "^2.9.2",
+    "dotenv": "^16.4.5",
     "isbot": "^4.1.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "remix-hono": "^0.0.16"
   },
   "devDependencies": {
     "@remix-run/dev": "^2.9.2",
