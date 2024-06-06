@@ -84,7 +84,7 @@ export function BarCharts() {
           The numbers don&apos;t lie.
         </h1>
         <div className="lg:block hidden ml-6">
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="99%" aspect={4}>
             <BarChart data={data}>
               <Legend z={"Higher is better"} />
               <XAxis
@@ -109,7 +109,7 @@ export function BarCharts() {
           </ResponsiveContainer>
         </div>
         <div className="lg:hidden  flex justify-center w-full">
-          <ResponsiveContainer width={"100%"} height={800}>
+          <ResponsiveContainer width={"99%"} aspect={1}>
             <BarChart
               data={data}
               layout="vertical"
