@@ -12,6 +12,7 @@ import {
 // eslint-disable-next-line import/no-unresolved
 import stylesheet from "~/tailwind.css?url";
 import { LinksFunction } from "@remix-run/node";
+import { ArrowLeftCircleIcon } from "@heroicons/react/20/solid";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -69,7 +70,16 @@ export function ErrorBoundary() {
                 Go home
               </Link>
 
-              <button onClick={() => navigate(-1)}>Go Back</button>
+              <button
+                onClick={() => navigate(-1)}
+                className="top-0 inline-flex items-center gap-x-2 rounded-md px-3.5 py-2.5 text-sm font-semibold border border-zinc-300 text-slate-800 shadow-sm hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                <ArrowLeftCircleIcon
+                  className="-ml-0.5 h-5 w-5"
+                  aria-hidden="true"
+                />
+                Go Back
+              </button>
 
               {/* <a href="#" className="text-sm font-semibold text-gray-900">
                 Contact support <span aria-hidden="true">&rarr;</span>
