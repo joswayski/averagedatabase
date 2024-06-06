@@ -36,7 +36,7 @@ EXPOSE 3000
 COPY --from=prod-deps --chown=remix:remix /app/package*.json ./
 
 COPY --from=prod-deps --chown=remix:remix /app/node_modules ./node_modules
-COPY --from=builder --chown=remix:remix /app/dist ./dist
+COPY --from=builder --chown=remix:remix /app/build ./build
 COPY --from=builder --chown=remix:remix /app/public ./public
 
 # Adjust the ENTRYPOINT to run the compiled JavaScript file

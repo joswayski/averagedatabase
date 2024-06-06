@@ -10,6 +10,7 @@ import { serveStatic } from "@hono/node-server/serve-static";
 const app = new Hono();
 
 app.get("/api/health", (c) => c.json({ message: "Saul Goodman" }));
+app.get("/health", (c) => c.json({ message: "Saul Goodman" }));
 
 app.use("/build/*", serveStatic({ root: "public" }));
 
