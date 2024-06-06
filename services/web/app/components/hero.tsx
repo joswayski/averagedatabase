@@ -14,9 +14,9 @@ export const Hero = () => {
   return (
     <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-48">
       <div className="flex justify-center">
-        <header className="absolute inset-x-0 top-0 z-50">
+        <header className="fixed inset-x-0 top-0 z-50 bg-zinc-50">
           <nav
-            className="flex items-center justify-between p-6 lg:px-8"
+            className="flex items-center justify-between lg:px-8"
             aria-label="Global"
           >
             <div className="flex lg:flex-1">
@@ -26,9 +26,9 @@ export const Hero = () => {
               >
                 <span className="sr-only">AverageDB</span>
                 <img
-                  className="h-8 w-auto"
-                  src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
-                  alt=""
+                  className="h-10 w-auto"
+                  src="/public/logo-sm.png"
+                  alt="Average Labs LLC logo"
                 />
               </a>
             </div>
@@ -61,12 +61,13 @@ export const Hero = () => {
                 </Link>
               ))}
             </div>
-            <div className="hidden lg:flex lg:flex-1 lg:justify-end">
+            <div className="hidden lg:flex  lg:flex-1 lg:justify-end">
               <a
                 href="https://github.com/joswayski/averagedatabase"
-                className="text-sm font-semibold leading-6 text-slate-600"
+                className="text-sm font-semibold leading-6 text-slate-600 flex flex-col justify-center items-center"
               >
                 Log in
+                <p className="text-slate-300">(coming soon!)</p>
               </a>
             </div>
           </nav>
@@ -181,9 +182,9 @@ export const Hero = () => {
           </svg>
           View on GitHub
         </a>
-        <div className="inline-flex justify-center items-center gap-x-3 text-center bg-gradient-to-tl from-teal-600 to-green-600 hover:from-cyan-600 hover:to-emerald-600 border border-transparent text-white text-sm font-medium rounded-full py-3 px-4 ">
+        {/* <div className="inline-flex justify-center items-center gap-x-3 text-center bg-gradient-to-tl from-teal-600 to-green-600 hover:from-cyan-600 hover:to-emerald-600 border border-transparent text-white text-sm font-medium rounded-full py-3 px-4 ">
           Get API Key
-        </div>
+        </div> */}
       </div>
     </div>
   );
