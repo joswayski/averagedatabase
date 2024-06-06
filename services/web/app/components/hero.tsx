@@ -169,8 +169,8 @@ export const Hero = () => {
 
       <div className="mt-5 max-w-3xl text-center mx-auto">
         <p className="text-lg text-gray-600 ">
-          AverageDB was built from the ground up meet the needs of the average
-          developer
+          AverageDB was built from the ground up to meet the needs of the
+          average developer
         </p>
       </div>
 
