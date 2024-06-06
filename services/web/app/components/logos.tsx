@@ -49,7 +49,7 @@ export default function Logos() {
             <p className="mt-6 text-lg leading-8 text-gray-600">
               Developers from these companies have IPs that show up in our logs
               that when traced back on a GeoIP lookup resolve to that
-              company&apos;s headquarters.
+              company&apos;s headquarters
             </p>
             {/* <div className="mt-8 flex items-center gap-x-6">
               <a

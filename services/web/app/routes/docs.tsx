@@ -1,7 +1,7 @@
 import { ArrowLeftCircleIcon } from "@heroicons/react/20/solid";
 import { Link, Outlet } from "@remix-run/react";
 
-export default function UptimeLayout() {
+export default function Docs() {
   return (
     <div className="bg-white   flex justify-center py-8">
       <div className="flex  flex-col">

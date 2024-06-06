@@ -4,7 +4,7 @@ The only database built from the ground for the average developer.
 
 [https://averagedb.com](https://averagedb.com)
 
-![logo](./images/logo.png)
+![logo](./services/web/public/logo.png)
 
 ### Support
 

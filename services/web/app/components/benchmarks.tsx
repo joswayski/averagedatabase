@@ -32,7 +32,7 @@ const data = [
   {
     name: "CockroachDB",
     Performance: 2,
-    Cost: 69,
+    Cost: 58,
   },
   {
     name: "Squeal Light",
@@ -61,7 +61,7 @@ const data = [
   },
   {
     name: "Oracle",
-    Performance: -40,
+    Performance: -20,
     Cost: 100,
   },
   {
@@ -108,9 +108,13 @@ export function BarCharts() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="lg:hidden block border w-full">
-          <ResponsiveContainer width="100%" height={"100%"} className={"mx-8"}>
-            <BarChart data={data} layout="vertical">
+        <div className="lg:hidden  flex justify-center w-full">
+          <ResponsiveContainer width={"100%"} height={800}>
+            <BarChart
+              data={data}
+              layout="vertical"
+              className="overflow-visible "
+            >
               <Legend z={"Higher is better"} />
               <YAxis
                 type="category"
@@ -119,6 +123,7 @@ export function BarCharts() {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
+                className=""
               />
               <XAxis
                 type="number"
