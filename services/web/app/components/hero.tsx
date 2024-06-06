@@ -20,7 +20,10 @@ export const Hero = () => {
             aria-label="Global"
           >
             <div className="flex lg:flex-1">
-              <a href="https://google.com" className="-m-1.5 p-1.5">
+              <a
+                href="https://github.com/joswayski/averagedatabase"
+                className="-m-1.5 p-1.5"
+              >
                 <span className="sr-only">AverageDB</span>
                 <img
                   className="h-8 w-auto"
@@ -44,18 +47,26 @@ export const Hero = () => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="text-sm font-semibold leading-6 text-slate-300"
+                  className="text-sm font-semibold leading-6 text-slate-600"
                 >
-                  {item.name}
+                  <span>
+                    {item.blinking ? (
+                      <span className="ml-12 absolute flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="absolute inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                    ) : null}
+                    <p>{item.name}</p>
+                  </span>
                 </Link>
               ))}
             </div>
             <div className="hidden lg:flex lg:flex-1 lg:justify-end">
               <a
-                href="https://google.com"
-                className="text-sm font-semibold leading-6 text-slate-300"
+                href="https://github.com/joswayski/averagedatabase"
+                className="text-sm font-semibold leading-6 text-slate-600"
               >
-                Log in <span aria-hidden="true">&rarr;</span>
+                Log in
               </a>
             </div>
           </nav>
@@ -67,7 +78,10 @@ export const Hero = () => {
             <div className="fixed inset-0 z-50" />
             <DialogPanel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-gray-900 px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-white/10">
               <div className="flex items-center justify-between">
-                <a href="https://google.com" className="-m-1.5 p-1.5">
+                <a
+                  href="https://github.com/joswayski/averagedatabase"
+                  className="-m-1.5 p-1.5"
+                >
                   <span className="sr-only">AverageDB</span>
                   <img
                     className="h-8 w-auto"
@@ -99,7 +113,7 @@ export const Hero = () => {
                   </div>
                   <div className="py-6">
                     <a
-                      href="https://google.com"
+                      href="https://github.com/joswayski/averagedatabase"
                       className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-slate-300 hover:bg-gray-800"
                     >
                       Log in (coming soon!)
