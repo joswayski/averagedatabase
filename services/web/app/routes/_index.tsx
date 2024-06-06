@@ -5,8 +5,11 @@ import { Pricing } from "~/components/pricing";
 
 export const meta: MetaFunction = () => {
   return [
-    { title: "New Remix App" },
-    { name: "description", content: "AverageDB" },
+    { title: "AverageDB" },
+    {
+      name: "description",
+      content: "The world's most advanced database platform",
+    },
   ];
 };
 

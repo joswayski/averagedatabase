@@ -17,7 +17,11 @@ const tiers = [
     },
     hideFrequency: false,
     description: "Just enough to put a side project on your resume",
-    features: ["1kb payloads", "No SLA im on vacation"],
+    features: [
+      "1kb payloads",
+      "Discord / Twitter reply guy support",
+      "Ads in your results",
+    ],
     featured: false,
     cta: "Get API key (coming soon)",
   },

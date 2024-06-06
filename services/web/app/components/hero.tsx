@@ -125,7 +125,7 @@ export const Hero = () => {
           </Dialog>
         </header>
         <Link
-          to="/series-a"
+          to="/we-rich-lmao"
           className="inline-flex items-center gap-x-2 bg-white border border-gray-200 text-xs text-gray-600 p-2 px-3 rounded-full transition hover:border-gray-300 "
         >
           ✨Announcing our $50m Series A funding round✨
@@ -160,7 +160,7 @@ export const Hero = () => {
       <div className="mt-5 max-w-3xl text-center mx-auto">
         <p className="text-lg text-gray-600 ">
           AverageDB was built from the ground up meet the needs of the average
-          developer.
+          developer
         </p>
       </div>
 
