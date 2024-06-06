@@ -45,7 +45,7 @@ const data = [
     Cost: 45,
   },
   {
-    name: "Redis®*",
+    name: "Redis®",
     Performance: 2,
     Cost: 40,
   },
@@ -79,32 +79,63 @@ const data = [
 export function BarCharts() {
   return (
     <div className="w-full flex justify-center items-center ">
-      <div className="  max-w-7xl w-full">
+      <div className="  max-w-7xl w-full ">
         <h1 className="font-bold text-xl text-center py-4">
-          The stats don&apos;t lie.
+          The numbers don&apos;t lie.
         </h1>
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={data}>
-            <Legend z={"Higher is better"} />
-            <XAxis
-              dataKey="name"
-              stroke="#888888"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              stroke="#888888"
-              fontSize={18}
-              tickLine={false}
-              axisLine={false}
-            />
-            <Tooltip />
+        <div className="lg:block hidden ml-6">
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={data}>
+              <Legend z={"Higher is better"} />
+              <XAxis
+                dataKey="name"
+                stroke="#888888"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                dataKey="Performance"
+                stroke="#888888"
+                fontSize={18}
+                tickLine={false}
+                axisLine={false}
+              />
+              <Tooltip />
 
-            <Bar dataKey="Performance" fill="#4f45e4" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Cost" fill="#F87315" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+              <Bar dataKey="Performance" fill="#4f45e4" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Cost" fill="#F87315" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="lg:hidden block border w-full">
+          <ResponsiveContainer width="100%" height={"100%"} className={"mx-8"}>
+            <BarChart data={data} layout="vertical">
+              <Legend z={"Higher is better"} />
+              <YAxis
+                type="category"
+                dataKey="name"
+                stroke="#888888"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <XAxis
+                type="number"
+                stroke="#888888"
+                fontSize={18}
+                tickLine={false}
+                axisLine={false}
+              />
+              <XAxis type="number" />
+              <YAxis type="category" />
+              <Tooltip />
+
+              <Bar dataKey="Performance" fill="#4f45e4" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Cost" fill="#F87315" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
     </div>
   );
