@@ -23,6 +23,8 @@ export const Hero = () => {
               <a
                 href="https://github.com/joswayski/averagedatabase"
                 className="-m-1.5 p-1.5"
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 <span className="sr-only">AverageDB</span>
                 <img
@@ -64,6 +66,8 @@ export const Hero = () => {
             <div className="hidden lg:flex  lg:flex-1 lg:justify-end">
               <a
                 href="https://github.com/joswayski/averagedatabase"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm font-semibold leading-6 text-slate-600 flex flex-col justify-center items-center"
               >
                 Log in
@@ -81,6 +85,8 @@ export const Hero = () => {
               <div className="flex items-center justify-between">
                 <a
                   href="https://github.com/joswayski/averagedatabase"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="-m-1.5 p-1.5"
                 >
                   <span className="sr-only">AverageDB</span>
@@ -115,6 +121,8 @@ export const Hero = () => {
                   <div className="py-6">
                     <a
                       href="https://github.com/joswayski/averagedatabase"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-slate-300 hover:bg-gray-800"
                     >
                       Log in (coming soon!)
@@ -169,6 +177,8 @@ export const Hero = () => {
         <a
           className="inline-flex justify-center items-center gap-x-3 text-center bg-gradient-to-tl from-blue-600 to-violet-600 hover:from-violet-600 hover:to-blue-600 border border-transparent text-white text-sm font-medium rounded-full py-3 px-4 "
           href="https://github.com/joswayski/averagedatabase"
+          target="_blank"
+          rel="noopener noreferrer"
         >
           <svg
             className="flex-shrink-0 size-4"
