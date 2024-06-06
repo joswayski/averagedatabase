@@ -6,7 +6,7 @@ import { Pricing } from "~/components/pricing";
 export const meta: MetaFunction = () => {
   return [
     { title: "New Remix App" },
-    { name: "description", content: "Welcome to Remix!" },
+    { name: "description", content: "AverageDB" },
   ];
 };
 

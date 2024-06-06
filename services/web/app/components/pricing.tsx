@@ -16,7 +16,7 @@ const tiers = [
       annually: "$0 (FREE!!) USE US NOW PLEASE",
     },
     hideFrequency: false,
-    description: "Just enough to put a side project on your resume.",
+    description: "Just enough to put a side project on your resume",
     features: ["1kb payloads", "No SLA im on vacation"],
     featured: false,
     cta: "Get API key",
@@ -30,7 +30,8 @@ const tiers = [
       "You're trying to get into YC and haven't setup proper accounting yet",
     features: [
       "4kb payloads",
-      "Dashboard to view your account info",
+      "Dashboard to login & view your account info",
+      "No longer get ads in your results",
       "Advanced analytics",
       "24-hour support response time",
       "Marketing automations",
@@ -44,7 +45,7 @@ const tiers = [
     href: "#",
     price: "Custom",
     description:
-      "Send us the stupid questionnaire we don't have SOC2 if it isn't obvious",
+      "Send us the stupid questionnaire from your legal team we don't have SOC2 if it isn't obvious",
     features: [
       "Unlimited products",
       "Unlimited subscribers",
@@ -66,7 +67,7 @@ export const Pricing = () => {
   const [frequency, setFrequency] = useState(frequencies[0]);
 
   return (
-    <div className=" py-24 sm:py-32 bg-white">
+    <div className=" py-24 sm:py-32 bg-white" id="pricing">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
           <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">

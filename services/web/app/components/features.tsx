@@ -3,23 +3,22 @@ import { CheckIcon } from "@heroicons/react/20/solid";
 const features = [
   {
     name: "Serverless",
-    description: "Why not",
+    description: "This one keyword got us an extra 10 million from Sequoia",
   },
   {
     name: "Search",
     description:
-      "You're going to %like% the way your results look, we guarantee it.",
+      "You're going to %like% the way your results look, we guarantee it",
   },
 
   {
-    name: "Vectors",
+    name: "Vectors/Embeddings",
     description:
-      "Sed rerum sunt dignissimos ullam. Iusto iure occaecati voluptate eligendi fugiat sequi.",
+      "Sam somehow got involved in our cap table so we have add this in to keep feeding his god machine",
   },
   {
     name: "GraphQL",
-    description:
-      "Quos inventore harum enim nesciunt. Aut repellat rerum omnis adipisci.",
+    description: "Look at you you little freak.. you got giddy didn't you..",
   },
   {
     name: "Key/Value",
@@ -32,9 +31,8 @@ const features = [
       "Eos laudantium repellat sed architecto earum unde incidunt. Illum sit dolores voluptatem.",
   },
   {
-    name: "Mobile app",
-    description:
-      "Nulla est saepe accusamus nostrum est est. Fugit voluptatum omnis quidem voluptatem.",
+    name: "Written in 100% Rust",
+    description: "Blazingly fast",
   },
   {
     name: "Real-time*",
