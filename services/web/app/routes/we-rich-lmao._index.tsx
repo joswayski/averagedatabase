@@ -124,7 +124,7 @@ export default function WeRich() {
         <figure className="mt-16">
           <img
             className="aspect-video rounded-xl bg-gray-50 object-cover"
-            src="/public/ebitda.png"
+            src="ebitda.png"
             alt=""
           />
         </figure>

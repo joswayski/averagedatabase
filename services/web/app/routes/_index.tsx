@@ -1,6 +1,7 @@
 import type { MetaFunction } from "@remix-run/node";
 import { BarCharts } from "~/components/benchmarks";
 import { Features } from "~/components/features";
+import Footer from "~/components/footer";
 import { Hero } from "~/components/hero";
 import Logos from "~/components/logos";
 import { Pricing } from "~/components/pricing";
@@ -23,6 +24,7 @@ export default function Index() {
       <Features />
       <Logos />
       <Pricing />
+      <Footer />
     </div>
   );
 }

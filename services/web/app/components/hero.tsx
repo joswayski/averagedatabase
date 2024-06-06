@@ -30,7 +30,7 @@ export const Hero = () => {
                 <span className="sr-only">AverageDB</span>
                 <img
                   className="h-10 w-auto"
-                  src="/public/logo-sm.png"
+                  src="logo-sm.png"
                   alt="Average Labs LLC logo"
                 />
               </a>
