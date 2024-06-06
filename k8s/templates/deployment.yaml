@@ -1,0 +1,79 @@
+{{- if .Values.deployments }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployments.name }}
+  labels:
+    app: {{ .Values.deployments.name }}
+spec:
+  replicas: {{ .Values.deployments.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.deployments.name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.deployments.maxUnavailable }}
+      maxSurge: {{ .Values.deployments.maxSurge }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.deployments.name }}
+    spec:
+      terminationGracePeriodSeconds: {{ $.Values.common.terminationGracePeriodSeconds }}
+      containers:
+        {{- range .Values.deployments.containers }}
+        - name: {{ .name }}
+          image: {{ .image }}
+          ports:
+            - containerPort: {{ .port }}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            {{- range $key, $value := .env }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $value.secretKeyRef.name }}
+                  key: {{ $value.secretKeyRef.key }}
+            {{- end }}
+          volumeMounts:
+            {{- range .volumeMounts }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              readOnly: {{ .readOnly | default false }}
+            {{- end }}
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  [
+                    "sh",
+                    "-c",
+                    "sleep {{ $.Values.deployments.preStopSleepSeconds }}",
+                  ]
+          readinessProbe:
+            httpGet:
+              path: {{ $.Values.deployments.healthCheckPath }}
+              port: {{ .port }}
+            initialDelaySeconds: {{ $.Values.deployments.initialDelaySeconds }}
+            periodSeconds: {{ $.Values.deployments.periodSeconds }}
+            timeoutSeconds: 5
+            failureThreshold: 3
+        {{- end }}
+      volumes:
+        {{- range .Values.deployments.volumes }}
+        - name: {{ .name }}
+          {{- if .secret }}
+          secret:
+            secretName: {{ .secret.secretName }}
+          {{- else if .configMap }}
+          configMap:
+            name: {{ .configMap.name }}
+          {{- else if .emptyDir }}
+          emptyDir: {}
+          {{- end }}
+        {{- end }}
+{{- end }}

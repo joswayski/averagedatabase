@@ -1,0 +1,22 @@
+# # Must start with 'deployments' key
+# deployments:
+#   replicas: 3
+#   name: api
+#   # TODO This will be changed soon
+#   containers:
+#     - name: api
+#       port: 8080
+#       image: plutomi/api:latestx86 # TODO update
+#       env:
+#         DATABASE_URL:
+#           secretKeyRef:
+#             name: api-config-secret
+#             key: DATABASE_URL
+#         BASE_WEB_URL:
+#           secretKeyRef:
+#             name: api-config-secret
+#             key: BASE_WEB_URL
+#         ENVIRONMENT:
+#           secretKeyRef:
+#             name: api-config-secret
+#             key: ENVIRONMENT

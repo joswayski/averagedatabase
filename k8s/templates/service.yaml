@@ -1,0 +1,18 @@
+{{- if .Values.services }}
+{{- with .Values.services }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}
+spec:
+  clusterIP: {{ .clusterIP }}
+  selector:
+    app: {{ .name }}
+  ports:
+    - protocol: TCP
+      # Port the pod listens on - global value from common.yaml
+      port: {{ .defaultContainerPort }}
+      # Port that the service is exposed on
+      targetPort: {{ .port }}
+{{- end }}
+{{- end }}

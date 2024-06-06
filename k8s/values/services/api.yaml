@@ -1,0 +1,4 @@
+# Must start with 'services' key
+services:
+  name: api
+  port: 8080
