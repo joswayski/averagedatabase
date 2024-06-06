@@ -59,7 +59,8 @@ export const Features = () => {
               All-in-one platform
             </p>
             <p className="mt-6 text-base leading-7 text-gray-600">
-              Look, we get it..
+              Let&apos;s be honest, you&apos;re already convinced... You just
+              need a way to justify it to your boss.
             </p>
           </div>
           <dl className="col-span-2 grid grid-cols-1 gap-x-8 gap-y-10 text-base leading-7 text-gray-600 sm:grid-cols-2 lg:gap-y-16">

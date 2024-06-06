@@ -22,7 +22,8 @@ const tiers = [
     features: [
       "1kb payloads",
       "Discord / Twitter reply guy support",
-      "Ads in your results",
+      "Targeted and relevant ads in your results",
+      "Dedicated microwave radiation interference",
     ],
     featured: false,
     cta: "Get API key (coming soon)",
@@ -60,7 +61,8 @@ const tiers = [
     features: [
       "$2,000/mo SSO addon (required)",
       "Dedicated email support\n\n\n(Mon-Fri 9am-12pm & 2pm-4pm Tokyo time)",
-      "Indexes available as a paid addon ($100/per)",
+      "Indexes available as a paid addon ($100/index/mo)",
+      "Employee pinky promise to not look at customer data to retaliate over a personal grievance",
       "Backups",
     ],
     featured: true,
