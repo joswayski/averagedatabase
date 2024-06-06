@@ -1,49 +1,70 @@
 import { getPercentageOf } from "~/utils/getPct";
 import { getRandomNumber } from "~/utils/randomNumber";
 
-const users = getRandomNumber(8000, 100000);
-const freeTier = getPercentageOf(90, users);
+import { ArrowDownIcon, ArrowUpIcon } from "@heroicons/react/20/solid";
+
+const;
+const legitData = [
+  {
+    name: "Uptime 30d",
+    stat: "100%",
+    changeType: "same",
+  },
+  {
+    name: "Uptime 90d",
+    stat: "100%",
+    changeType: "same",
+  },
+  {
+    name: "Uptime All Time",
+    stat: "100%",
+    changeType: "same",
+  },
+];
 
 const stats = [
   {
-    id: 1,
-    name: "Happy Users",
-    value: users,
-    color: "",
+    title: "API",
   },
-  { id: 2, name: "Outages. Ever.", value: "0" },
-  { id: 3, name: "Uptime guarantee", value: "99.99999%" },
-  { id: 4, name: "Paid out to creators", value: "$70M" },
+  {
+    title: "Database",
+  },
+  {
+    title: "Backups",
+  },
+  {
+    title: "Team Morale",
+  },
 ];
+
+function classNames(...classes) {
+  return classes.filter(Boolean).join(" ");
+}
 
 export default function Uptime() {
   return (
-    <div className="mx-auto max-w-7xl px-6 lg:px-8 border">
-      <div className="mx-auto max-w-2xl lg:max-w-none">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-            Schrodinger&apos;s Uptime
-          </h2>
-          <p className="mt-4 text-lg leading-8 text-gray-600">
-            If we don&apos;t update the status page is because we&apos;re so
-            busy making sure everything is always up and running :)
-          </p>
+    <div className="flex flex-col space-y-6 p-12">
+      {stats.map((stat) => (
+        <div key={stat.title}>
+          <h3 className="text-base font-semibold leading-6 text-gray-900">
+            {stat.title}
+          </h3>
+          <dl className="mt-5 grid grid-cols-1 divide-y divide-gray-200 overflow-hidden rounded-lg bg-white shadow md:grid-cols-3 md:divide-x md:divide-y-0">
+            {legitData.map((item) => (
+              <div key={item.name} className="px-4 py-5 sm:p-6">
+                <dt className="text-base font-normal text-gray-900">
+                  {item.name}
+                </dt>
+                <dd className="mt-1 flex items-baseline justify-between md:block lg:flex">
+                  <div className="flex items-baseline text-2xl font-semibold text-emerald-600">
+                    {item.stat}
+                  </div>
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
-        <dl className="mt-16 grid grid-cols-1 gap-0.5 overflow-hidden rounded-2xl text-center sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => (
-            <div key={stat.id} className="flex flex-col bg-gray-400/5 p-8">
-              <dt className="text-sm font-semibold leading-6 text-gray-600">
-                {stat.name}
-              </dt>
-              <dd className="order-first text-3xl font-semibold tracking-tight text-gray-900">
-                {typeof stat.value === "number"
-                  ? stat.value.toLocaleString()
-                  : stat.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </div>
+      ))}
     </div>
   );
 }

@@ -59,7 +59,7 @@ const tiers = [
       "$2,000/mo SSO addon (required)",
       "Dedicated email support\n\n\n(Mon-Fri 9am-12pm & 2pm-4pm Tokyo time)",
       "Indexes available as a paid addon ($100/per)",
-      "Backups (lol)",
+      "Backups",
     ],
     featured: true,
     cta: "Get API key (coming soon)",
