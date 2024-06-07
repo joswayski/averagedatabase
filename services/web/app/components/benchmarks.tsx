@@ -84,7 +84,12 @@ export function BarCharts() {
           The numbers don&apos;t lie.
         </h1>
         <div className="lg:flex hidden justify-center">
-          <img src="horizontal2.png" height={800} width={800} alt="boop"></img>
+          <img
+            src="horizontal2.png"
+            height={1000}
+            width={1000}
+            alt="boop"
+          ></img>
           {/* <ResponsiveContainer width="99%" aspect={4}>
             <BarChart data={data}>
               <Legend z={"Higher is better"} />
@@ -111,7 +116,7 @@ export function BarCharts() {
         </div>
 
         <div className="lg:hidden  flex justify-center w-full">
-          <img src="vertical2.png" height={500} width={500} alt="beep"></img>
+          <img src="vertical2.png" height={800} width={800} alt="beep"></img>
 
           {/* <ResponsiveContainer width={"99%"} aspect={1}>
             <BarChart
