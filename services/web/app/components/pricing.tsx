@@ -24,6 +24,7 @@ const tiers = [
       "Discord / Twitter reply guy support",
       "Targeted and relevant ads in your results",
       "Dedicated microwave radiation interference",
+      "Blocked on Twitter by the AverageDB CEO",
     ],
     featured: false,
     cta: "Get API key (coming soon)",
