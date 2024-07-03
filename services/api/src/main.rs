@@ -13,12 +13,12 @@ use std::{num::NonZeroUsize, sync::Arc};
 use tower::ServiceBuilder;
 
 use axum::{
-    extract::Request,
-    http::{HeaderMap, StatusCode},
-    middleware::Next,
+    extract::{Extension, Request},
+    http::{self, HeaderMap, StatusCode},
+    middleware::{self, Next},
     response::{IntoResponse, Json, Response},
     routing::{get, post},
-    Extension, Router,
+    Router,
 };
 use serde_json::Value;
 
@@ -132,14 +132,22 @@ async fn main() {
     let cache: Arc<Mutex<LruCache<String, String>>> =
         Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
 
-    let app = Router::new()
-        .route("/", get(root))
-        .route("/gibs-key", post(gibs_key))
+    let with_auth = Router::new()
         .route(
             "/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
             post(add_item),
         )
         .route("/gibs-item", get(gibs_item))
+        .layer(middleware::from_fn(check_for_key));
+
+    let with_body = Router::new()
+        .route("/gibs-key", post(gibs_key))
+        .layer(middleware::from_fn(check_for_body));
+
+    let app = Router::new()
+        .route("/", get(root))
+        .merge(with_auth)
+        .merge(with_body)
         .layer(ServiceBuilder::new().layer(Extension(cache)));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:80").await.unwrap();
@@ -156,15 +164,14 @@ struct InsertItemResponse {
     brought_to_you_by: String,
 }
 
-async fn check_for_key(
-    Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
-    headers: HeaderMap,
-    mut req: Request,
-    next: Next,
-) -> Response {
-    let api_key_header: Option<&axum::http::HeaderValue> = headers.get("averagedb-api-key");
+async fn check_for_key(mut req: Request, next: Next) -> Response {
+    let api_key = req
+        .headers()
+        .get("averagedb-api-key")
+        .and_then(|value| value.to_str().ok())
+        .map(|s| s.to_string());
 
-    if api_key_header.is_none() {
+    if api_key.is_none() {
         return (
             StatusCode::UNAUTHORIZED,
             "You must provide an API key in the 'averagedb-api-key' header".to_string(),
@@ -172,17 +179,7 @@ async fn check_for_key(
             .into_response();
     }
 
-    let key_value = api_key_header.unwrap().to_str();
-
-    if key_value.is_err() {
-        return (
-            StatusCode::BAD_REQUEST,
-            "The 'averagedb-api key' header must be a string".to_string(),
-        )
-            .into_response();
-    }
-
-    let api_key = key_value.unwrap();
+    let api_key = api_key.unwrap();
 
     if api_key.is_empty() {
         return (
@@ -193,27 +190,25 @@ async fn check_for_key(
     }
 
     req.extensions_mut().insert(api_key);
-
     return next.run(req).await;
 }
 
-async fn add_item(
-    Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
-    Extension(api_key): Extension<String>,
-    headers: HeaderMap,
-    payload: Option<Json<Value>>,
-) -> Response {
-    if payload.is_none() {
+async fn check_for_body(mut req: Request, next: Next) -> Response {
+    let body = req
+        .extensions()
+        .get::<Value>()
+        .cloned()
+        .unwrap_or_else(|| Value::Null);
+
+    if body.is_null() {
         return (
             StatusCode::BAD_REQUEST,
-            "Request body is required".to_string(),
+            "You must provide a JSON body in the request".to_string(),
         )
             .into_response();
     }
 
-    let payload = payload.unwrap();
-
-    let data = payload.get("data").and_then(|v| v.as_str());
+    let data = body.get("data").and_then(|v| v.as_str());
 
     if data.is_none() {
         return (
@@ -223,14 +218,31 @@ async fn add_item(
             .into_response();
     }
 
-    let data = data.unwrap().to_string();
+    let data = data.unwrap();
 
+    let payload = Body {
+        data: data.to_string(),
+    };
+
+    req.extensions_mut().insert(payload);
+    return next.run(req).await;
+}
+
+#[derive(Clone)]
+struct Body {
+    data: String,
+}
+async fn add_item(
+    Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
+    Extension(api_key): Extension<String>,
+    Extension(payload): Extension<Body>,
+) -> Response {
     let mut cache = cache.lock().await;
 
     let timestamp = Utc::now().to_rfc3339();
     let combined_key = format!("{}:{}", api_key, timestamp);
 
-    cache.put(combined_key.clone(), data);
+    cache.put(combined_key.clone(), payload.data);
 
     let res: InsertItemResponse = InsertItemResponse {
         key: combined_key,
@@ -256,31 +268,50 @@ fn get_api_key() -> String {
     rng.gen_range(1..=1000000).to_string()
 }
 
-async fn gibs_key() -> (StatusCode, Json<CreateApiKeyResponse>) {
-    let res = CreateApiKeyResponse {
-        api_key: get_api_key(),
-        brought_to_you_by: get_random_ad(),
-    };
+async fn gibs_key(
+    Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
+) -> (StatusCode, Json<CreateApiKeyResponse>) {
+    let mut cache = cache.lock().await;
 
-    (StatusCode::CREATED, Json(res))
+    for _ in 0..10 {
+        let api_key = get_api_key();
+
+        if !cache.contains(&api_key) {
+            cache.put(api_key.clone(), 1.to_string());
+            let res = CreateApiKeyResponse {
+                api_key,
+                brought_to_you_by: get_random_ad(),
+            };
+            return (StatusCode::CREATED, Json(res));
+        }
+    }
+
+    (
+        StatusCode::INTERNAL_SERVER_ERROR,
+        Json(CreateApiKeyResponse {
+            api_key: "".to_string(),
+            brought_to_you_by: "Failed to generate a unique API key sorry bud we're not experts"
+                .to_string(),
+        }),
+    )
 }
 
-// async fn gibs_item() -> (StatusCode, Json<CreateApiKeyResponse>) {
-//     let mut cache = cache.lock().await;
+async fn gibs_item() -> Response {
+    // let mut cache = cache.lock().await;
 
-//     // Get timestamp from query
-//     let timestamp = req.uri().query().unwrap_or("");
-//     let combined_key = format!("{}:{}", api_key, timestamp);
+    // // Get timestamp from query
+    // let timestamp = req.uri().query().unwrap_or("");
+    // let combined_key = format!("{}:{}", api_key, timestamp);
 
-//     let item_in_cache = cache.get(&combined_key);
+    // let item_in_cache = cache.get(&combined_key);
 
-//     if item_in_cache.is_none() {
-//         return next.run(req).await;
-//     }
+    // if item_in_cache.is_none() {
+    //     return next.run(req).await;
+    // }
 
-//     (
-//         StatusCode::BAD_REQUEST,
-//         "You have already inserted an item with this key".to_string(),
-//     )
-//         .into_response()(StatusCode::CREATED, Json(res))
-// }
+    (
+        StatusCode::BAD_REQUEST,
+        "You have already inserted an item with this key".to_string(),
+    )
+        .into_response()
+}
