@@ -3,12 +3,18 @@ extern crate serde_derive;
 use rand::Rng;
 
 use serde_derive::Serialize;
+use tokio::sync::Mutex;
 use tracing_subscriber;
+extern crate lru;
+
+use lru::LruCache;
+use std::{num::NonZeroUsize, sync::Arc};
+use tower::ServiceBuilder;
 
 use axum::{
     http::StatusCode,
     routing::{get, post},
-    Json, Router,
+    Extension, Json, Router,
 };
 use serde_json::Value;
 
@@ -119,13 +125,17 @@ const ADS: &[&str; 100] = &[
 async fn main() {
     tracing_subscriber::fmt::init();
 
+    let cache: Arc<Mutex<LruCache<isize, String>>> =
+        Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
+
     let app = Router::new()
         .route("/", get(root))
         .route("/gibs-key", post(gibs_key))
         .route(
             "/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
             post(add_item),
-        );
+        )
+        .layer(ServiceBuilder::new().layer(Extension(cache)));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:80").await.unwrap();
     axum::serve(listener, app).await.unwrap();
@@ -135,8 +145,18 @@ async fn root() -> &'static str {
     "Are you an idiot? Did you forget to look at the docs?"
 }
 
-async fn add_item(Json(payload): Json<Value>) -> (StatusCode, Json<Value>) {
-    (StatusCode::CREATED, Json(payload))
+async fn add_item(
+    Extension(cache): Extension<Arc<Mutex<LruCache<isize, String>>>>,
+
+    Json(payload): Json<Value>,
+) -> (StatusCode, Json<Value>) {
+    let mut cash = cache.lock().await;
+
+    cash.push(1, "example_value".to_string());
+
+    let v = cash.get(&1).unwrap();
+
+    (StatusCode::CREATED, Json(Value::String(v.to_string())))
 }
 
 #[derive(Serialize)]
