@@ -6,15 +6,17 @@ use serde_derive::Serialize;
 use tokio::sync::Mutex;
 use tracing_subscriber;
 extern crate lru;
+use chrono::Utc;
 
 use lru::LruCache;
 use std::{num::NonZeroUsize, sync::Arc};
 use tower::ServiceBuilder;
 
 use axum::{
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
+    response::{IntoResponse, Json, Response},
     routing::{get, post},
-    Extension, Json, Router,
+    Extension, Router,
 };
 use serde_json::Value;
 
@@ -125,7 +127,7 @@ const ADS: &[&str; 100] = &[
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let cache: Arc<Mutex<LruCache<isize, String>>> =
+    let cache: Arc<Mutex<LruCache<String, String>>> =
         Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
 
     let app = Router::new()
@@ -145,36 +147,98 @@ async fn root() -> &'static str {
     "Are you an idiot? Did you forget to look at the docs?"
 }
 
-async fn add_item(
-    Extension(cache): Extension<Arc<Mutex<LruCache<isize, String>>>>,
-
-    Json(payload): Json<Value>,
-) -> (StatusCode, Json<Value>) {
-    let mut cash = cache.lock().await;
-
-    cash.push(1, "example_value".to_string());
-
-    let v = cash.get(&1).unwrap();
-
-    (StatusCode::CREATED, Json(Value::String(v.to_string())))
+#[derive(Serialize)]
+struct InsertItemResponse {
+    key: String,
+    brought_to_you_by: String,
 }
 
+async fn add_item(
+    Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
+    headers: HeaderMap,
+    payload: Option<Json<Value>>,
+) -> Response {
+    match payload {
+        Some(payload) => {
+            if let Some(data) = payload.get("data").and_then(|v| v.as_str()) {
+                let api_key = headers.get("averagedb-api-key");
+
+                if let Some(api_key) = api_key {
+                    let key_value = api_key.to_str();
+
+                    if key_value.is_err() {
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            "The 'averagedb-api key' header must be a string".to_string(),
+                        )
+                            .into_response();
+                    }
+
+                    let api_key = key_value.unwrap();
+
+                    if api_key.is_empty() {
+                        return (
+                            StatusCode::BAD_REQUEST,
+                            "The 'averagedb-api key' header must not be empty".to_string(),
+                        )
+                            .into_response();
+                    }
+
+                    let mut cache = cache.lock().await;
+
+                    let timestamp = Utc::now().to_rfc3339();
+                    let combined_key = format!("{}:{}", api_key, timestamp);
+
+                    cache.put(combined_key.clone(), data.to_string());
+
+                    let res: InsertItemResponse = InsertItemResponse {
+                        key: combined_key,
+                        brought_to_you_by: get_random_ad(),
+                    };
+                    (StatusCode::CREATED, Json(res)).into_response()
+                } else {
+                    return (
+                        StatusCode::UNAUTHORIZED,
+                        "You must provide an API key in the 'averagedb-api-key' header".to_string(),
+                    )
+                        .into_response();
+                }
+            } else {
+                (
+                    StatusCode::BAD_REQUEST,
+                    "The 'data' field is required and must be a string".to_string(),
+                )
+                    .into_response()
+            }
+        }
+        None => (
+            StatusCode::BAD_REQUEST,
+            "Request body is required".to_string(),
+        )
+            .into_response(),
+    }
+}
 #[derive(Serialize)]
 struct CreateApiKeyResponse {
     api_key: String,
     brought_to_you_by: String,
 }
 
-async fn gibs_key() -> (StatusCode, Json<CreateApiKeyResponse>) {
+fn get_random_ad() -> String {
     let mut rng = rand::thread_rng();
-
-    let key: i64 = rng.gen_range(1..=1000000);
-
     let index = rng.gen_range(0..ADS.len());
+    ADS[index].to_string()
+}
 
+fn get_api_key() -> String {
+    let mut rng = rand::thread_rng();
+    rng.gen_range(1..=1000000).to_string()
+}
+
+async fn gibs_key() -> (StatusCode, Json<CreateApiKeyResponse>) {
     let res = CreateApiKeyResponse {
-        api_key: key.to_string(),
-        brought_to_you_by: ADS[index].to_string(),
+        api_key: get_api_key(),
+        brought_to_you_by: get_random_ad(),
     };
 
     (StatusCode::CREATED, Json(res))
