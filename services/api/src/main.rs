@@ -2,7 +2,7 @@ extern crate serde_derive;
 
 use rand::Rng;
 
-use serde_derive::Serialize;
+use serde_derive::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use tracing_subscriber;
 extern crate lru;
@@ -14,7 +14,7 @@ use tower::ServiceBuilder;
 
 use axum::{
     extract::{Extension, Request},
-    http::{self, HeaderMap, StatusCode},
+    http::StatusCode,
     middleware::{self, Next},
     response::{IntoResponse, Json, Response},
     routing::{get, post},
@@ -140,14 +140,10 @@ async fn main() {
         .route("/gibs-item", get(gibs_item))
         .layer(middleware::from_fn(check_for_key));
 
-    let with_body = Router::new()
-        .route("/gibs-key", post(gibs_key))
-        .layer(middleware::from_fn(check_for_body));
-
     let app = Router::new()
         .route("/", get(root))
         .merge(with_auth)
-        .merge(with_body)
+        .route("/gibs-key", get(gibs_key))
         .layer(ServiceBuilder::new().layer(Extension(cache)));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:80").await.unwrap();
@@ -160,11 +156,16 @@ async fn root() -> &'static str {
 
 #[derive(Serialize)]
 struct InsertItemResponse {
+    message: String,
     key: String,
     brought_to_you_by: String,
 }
 
-async fn check_for_key(mut req: Request, next: Next) -> Response {
+async fn check_for_key(
+    Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
+    mut req: Request,
+    next: Next,
+) -> Response {
     let api_key = req
         .headers()
         .get("averagedb-api-key")
@@ -189,62 +190,36 @@ async fn check_for_key(mut req: Request, next: Next) -> Response {
             .into_response();
     }
 
+    if !cache.lock().await.contains(&api_key) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            "Get a valid key first dummy".to_string(),
+        )
+            .into_response();
+    }
+
     req.extensions_mut().insert(api_key);
     return next.run(req).await;
 }
 
-async fn check_for_body(mut req: Request, next: Next) -> Response {
-    let body = req
-        .extensions()
-        .get::<Value>()
-        .cloned()
-        .unwrap_or_else(|| Value::Null);
-
-    if body.is_null() {
-        return (
-            StatusCode::BAD_REQUEST,
-            "You must provide a JSON body in the request".to_string(),
-        )
-            .into_response();
-    }
-
-    let data = body.get("data").and_then(|v| v.as_str());
-
-    if data.is_none() {
-        return (
-            StatusCode::BAD_REQUEST,
-            "The 'data' field is required in the request body".to_string(),
-        )
-            .into_response();
-    }
-
-    let data = data.unwrap();
-
-    let payload = Body {
-        data: data.to_string(),
-    };
-
-    req.extensions_mut().insert(payload);
-    return next.run(req).await;
-}
-
-#[derive(Clone)]
-struct Body {
+#[derive(Clone, Deserialize)]
+struct TestType {
     data: String,
 }
 async fn add_item(
     Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
     Extension(api_key): Extension<String>,
-    Extension(payload): Extension<Body>,
+    Json(body): Json<TestType>,
 ) -> Response {
     let mut cache = cache.lock().await;
 
     let timestamp = Utc::now().to_rfc3339();
     let combined_key = format!("{}:{}", api_key, timestamp);
 
-    cache.put(combined_key.clone(), payload.data);
+    cache.put(combined_key.clone(), body.data);
 
     let res: InsertItemResponse = InsertItemResponse {
+        message: "Great success!".to_string(),
         key: combined_key,
         brought_to_you_by: get_random_ad(),
     };
