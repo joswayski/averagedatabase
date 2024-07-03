@@ -13,7 +13,9 @@ use std::{num::NonZeroUsize, sync::Arc};
 use tower::ServiceBuilder;
 
 use axum::{
+    extract::Request,
     http::{HeaderMap, StatusCode},
+    middleware::Next,
     response::{IntoResponse, Json, Response},
     routing::{get, post},
     Extension, Router,
@@ -137,6 +139,7 @@ async fn main() {
             "/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
             post(add_item),
         )
+        .route("/gibs-item", get(gibs_item))
         .layer(ServiceBuilder::new().layer(Extension(cache)));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:80").await.unwrap();
@@ -153,71 +156,89 @@ struct InsertItemResponse {
     brought_to_you_by: String,
 }
 
+async fn check_for_key(
+    Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
+    headers: HeaderMap,
+    mut req: Request,
+    next: Next,
+) -> Response {
+    let api_key_header: Option<&axum::http::HeaderValue> = headers.get("averagedb-api-key");
+
+    if api_key_header.is_none() {
+        return (
+            StatusCode::UNAUTHORIZED,
+            "You must provide an API key in the 'averagedb-api-key' header".to_string(),
+        )
+            .into_response();
+    }
+
+    let key_value = api_key_header.unwrap().to_str();
+
+    if key_value.is_err() {
+        return (
+            StatusCode::BAD_REQUEST,
+            "The 'averagedb-api key' header must be a string".to_string(),
+        )
+            .into_response();
+    }
+
+    let api_key = key_value.unwrap();
+
+    if api_key.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            "The 'averagedb-api key' header must not be empty".to_string(),
+        )
+            .into_response();
+    }
+
+    req.extensions_mut().insert(api_key);
+
+    return next.run(req).await;
+}
+
 async fn add_item(
     Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
+    Extension(api_key): Extension<String>,
     headers: HeaderMap,
     payload: Option<Json<Value>>,
 ) -> Response {
-    match payload {
-        Some(payload) => {
-            if let Some(data) = payload.get("data").and_then(|v| v.as_str()) {
-                let api_key = headers.get("averagedb-api-key");
-
-                if let Some(api_key) = api_key {
-                    let key_value = api_key.to_str();
-
-                    if key_value.is_err() {
-                        return (
-                            StatusCode::BAD_REQUEST,
-                            "The 'averagedb-api key' header must be a string".to_string(),
-                        )
-                            .into_response();
-                    }
-
-                    let api_key = key_value.unwrap();
-
-                    if api_key.is_empty() {
-                        return (
-                            StatusCode::BAD_REQUEST,
-                            "The 'averagedb-api key' header must not be empty".to_string(),
-                        )
-                            .into_response();
-                    }
-
-                    let mut cache = cache.lock().await;
-
-                    let timestamp = Utc::now().to_rfc3339();
-                    let combined_key = format!("{}:{}", api_key, timestamp);
-
-                    cache.put(combined_key.clone(), data.to_string());
-
-                    let res: InsertItemResponse = InsertItemResponse {
-                        key: combined_key,
-                        brought_to_you_by: get_random_ad(),
-                    };
-                    (StatusCode::CREATED, Json(res)).into_response()
-                } else {
-                    return (
-                        StatusCode::UNAUTHORIZED,
-                        "You must provide an API key in the 'averagedb-api-key' header".to_string(),
-                    )
-                        .into_response();
-                }
-            } else {
-                (
-                    StatusCode::BAD_REQUEST,
-                    "The 'data' field is required and must be a string".to_string(),
-                )
-                    .into_response()
-            }
-        }
-        None => (
+    if payload.is_none() {
+        return (
             StatusCode::BAD_REQUEST,
             "Request body is required".to_string(),
         )
-            .into_response(),
+            .into_response();
     }
+
+    let payload = payload.unwrap();
+
+    let data = payload.get("data").and_then(|v| v.as_str());
+
+    if data.is_none() {
+        return (
+            StatusCode::BAD_REQUEST,
+            "The 'data' field is required in the request body".to_string(),
+        )
+            .into_response();
+    }
+
+    let data = data.unwrap().to_string();
+
+    let mut cache = cache.lock().await;
+
+    let timestamp = Utc::now().to_rfc3339();
+    let combined_key = format!("{}:{}", api_key, timestamp);
+
+    cache.put(combined_key.clone(), data);
+
+    let res: InsertItemResponse = InsertItemResponse {
+        key: combined_key,
+        brought_to_you_by: get_random_ad(),
+    };
+    (StatusCode::CREATED, Json(res)).into_response()
 }
+
 #[derive(Serialize)]
 struct CreateApiKeyResponse {
     api_key: String,
@@ -243,3 +264,23 @@ async fn gibs_key() -> (StatusCode, Json<CreateApiKeyResponse>) {
 
     (StatusCode::CREATED, Json(res))
 }
+
+// async fn gibs_item() -> (StatusCode, Json<CreateApiKeyResponse>) {
+//     let mut cache = cache.lock().await;
+
+//     // Get timestamp from query
+//     let timestamp = req.uri().query().unwrap_or("");
+//     let combined_key = format!("{}:{}", api_key, timestamp);
+
+//     let item_in_cache = cache.get(&combined_key);
+
+//     if item_in_cache.is_none() {
+//         return next.run(req).await;
+//     }
+
+//     (
+//         StatusCode::BAD_REQUEST,
+//         "You have already inserted an item with this key".to_string(),
+//     )
+//         .into_response()(StatusCode::CREATED, Json(res))
+// }
