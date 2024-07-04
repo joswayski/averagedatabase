@@ -284,6 +284,11 @@ struct Key {
     key: String,
 }
 
+#[derive(Serialize, Deserialize)]
+struct GibsItemResponse {
+    value: String,
+    brought_to_you_by: String,
+}
 async fn gibs_item(
     Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
     Extension(api_key): Extension<String>,
@@ -332,5 +337,9 @@ async fn gibs_item(
 
     let item = item_in_cache.unwrap();
 
-    return (StatusCode::OK, Json(item)).into_response();
+    let res: GibsItemResponse = GibsItemResponse {
+        value: item.to_string(),
+        brought_to_you_by: get_random_ad(),
+    };
+    return (StatusCode::OK, Json(res)).into_response();
 }
