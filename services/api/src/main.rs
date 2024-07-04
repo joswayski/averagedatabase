@@ -1,6 +1,6 @@
 extern crate serde_derive;
 
-use rand::Rng;
+use rand::{distributions::Alphanumeric, Rng};
 
 use serde_derive::{Deserialize, Serialize};
 use tokio::sync::Mutex;
@@ -13,7 +13,7 @@ use std::{num::NonZeroUsize, sync::Arc};
 use tower::ServiceBuilder;
 
 use axum::{
-    extract::{Extension, Request},
+    extract::{DefaultBodyLimit, Extension, Query, Request},
     http::StatusCode,
     middleware::{self, Next},
     response::{IntoResponse, Json, Response},
@@ -144,7 +144,11 @@ async fn main() {
         .route("/", get(root))
         .merge(with_auth)
         .route("/gibs-key", get(gibs_key))
-        .layer(ServiceBuilder::new().layer(Extension(cache)));
+        .layer(
+            ServiceBuilder::new()
+                .layer(Extension(cache))
+                .layer(DefaultBodyLimit::max(1024)),
+        );
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:80").await.unwrap();
     axum::serve(listener, app).await.unwrap();
@@ -202,6 +206,10 @@ async fn check_for_key(
     return next.run(req).await;
 }
 
+fn get_random_string() -> String {
+    let mut rng: rand::prelude::ThreadRng = rand::thread_rng();
+    (0..20).map(|_| rng.sample(Alphanumeric) as char).collect()
+}
 #[derive(Clone, Deserialize)]
 struct TestType {
     data: String,
@@ -213,8 +221,8 @@ async fn add_item(
 ) -> Response {
     let mut cache = cache.lock().await;
 
-    let timestamp = Utc::now().to_rfc3339();
-    let combined_key = format!("{}:{}", api_key, timestamp);
+    let random_string: String = get_random_string();
+    let combined_key = format!("{}:{}", api_key, random_string);
 
     cache.put(combined_key.clone(), body.data);
 
@@ -233,7 +241,7 @@ struct CreateApiKeyResponse {
 }
 
 fn get_random_ad() -> String {
-    let mut rng = rand::thread_rng();
+    let mut rng: rand::prelude::ThreadRng = rand::thread_rng();
     let index = rng.gen_range(0..ADS.len());
     ADS[index].to_string()
 }
@@ -271,22 +279,58 @@ async fn gibs_key(
     )
 }
 
-async fn gibs_item() -> Response {
-    // let mut cache = cache.lock().await;
+#[derive(Serialize, Deserialize)]
+struct Key {
+    key: String,
+}
 
-    // // Get timestamp from query
-    // let timestamp = req.uri().query().unwrap_or("");
-    // let combined_key = format!("{}:{}", api_key, timestamp);
+async fn gibs_item(
+    Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
+    Extension(api_key): Extension<String>,
+    key: Query<Key>,
+) -> Response {
+    let mut cache = cache.lock().await;
 
-    // let item_in_cache = cache.get(&combined_key);
+    if key.key.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            "You must provide a key in the query string".to_string(),
+        )
+            .into_response();
+    }
+    let key_in_query = &key.key.split(":").nth(0);
 
-    // if item_in_cache.is_none() {
-    //     return next.run(req).await;
-    // }
+    if key_in_query.is_none() {
+        return (
+            StatusCode::BAD_REQUEST,
+            "You must provide a key in the query string".to_string(),
+        )
+            .into_response();
+    }
 
-    (
-        StatusCode::BAD_REQUEST,
-        "You have already inserted an item with this key".to_string(),
-    )
-        .into_response()
+    let key_in_query = key_in_query.unwrap();
+
+    // Check if the query matches the api key
+    if &key_in_query != &api_key {
+        return (
+            StatusCode::UNAUTHORIZED,
+            "Query key must match api key in header".to_string(),
+        )
+            .into_response();
+    }
+    //
+    let item_in_cache = cache.get(&key.key);
+
+    if item_in_cache.is_none() {
+        println!("No item found with key: {}", key.key);
+        return (
+            StatusCode::NOT_FOUND,
+            "No item found with this key. It might have been deleted.. 🤷".to_string(),
+        )
+            .into_response();
+    }
+
+    let item = item_in_cache.unwrap();
+
+    return (StatusCode::OK, Json(item)).into_response();
 }
