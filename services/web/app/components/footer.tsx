@@ -43,7 +43,7 @@ export default function Footer() {
         </div>
         <div className="mt-8 md:order-1 md:mt-0 flex justify-center">
           <p className="text-center text-xs leading-5 text-gray-500">
-            &copy; 2024 Jose Valerio / Average Labs LLC /{" "}
+            &copy; 2024 Average Labs LLC /{" "}
             <a
               href="https://twitter.com/notjoswayski"
               target="_blank"
@@ -51,6 +51,15 @@ export default function Footer() {
               className="text-blue-400"
             >
               @notjoswayski
+            </a>{" "}
+            and{" "}
+            <a
+              href="https://twitter.com/AvgDatabaseCEO"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400"
+            >
+              @AvgDatabaseCEO
             </a>
           </p>
         </div>

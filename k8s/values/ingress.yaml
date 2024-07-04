@@ -21,6 +21,16 @@ ingress:
           #       name: api
           #       port:
           #         number: 80
+    - host: "averagedatabase.com/api/"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 80
     - host: "*.averagedatabase.com" 
       http:
         paths:
