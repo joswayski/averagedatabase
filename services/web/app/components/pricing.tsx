@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Radio, RadioGroup } from "@headlessui/react";
 import { CheckIcon } from "@heroicons/react/20/solid";
+import { Form, useNavigation } from "@remix-run/react";
 
 const frequencies = [
   { value: "monthly", label: "Monthly", priceSuffix: "/month" },
@@ -27,7 +28,7 @@ const tiers = [
       "Complimentary block on Twitter by the AverageDB CEO",
     ],
     featured: false,
-    cta: "Get API key (coming soon)",
+    cta: "Get API key",
   },
   {
     name: (
@@ -49,7 +50,7 @@ const tiers = [
       "ACID compliance available as a paid addon",
     ],
     featured: false,
-    cta: "Get API key (coming soon)",
+    cta: "Get API key",
   },
   {
     name: "Enterprise",
@@ -67,7 +68,7 @@ const tiers = [
       "Backups",
     ],
     featured: true,
-    cta: "Get API key (coming soon)",
+    cta: "Get API key",
   },
 ];
 
@@ -77,6 +78,7 @@ function classNames(...classes) {
 
 export const Pricing = () => {
   const [frequency, setFrequency] = useState(frequencies[0]);
+  const navigation = useNavigation();
 
   return (
     <div
@@ -117,95 +119,112 @@ export const Pricing = () => {
           </fieldset>
         </div>
         <div className="isolate mx-auto mt-10 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-          {tiers.map((tier) => (
-            <div
-              key={tier.id}
-              className={classNames(
-                tier.featured
-                  ? "bg-gray-900 ring-gray-900"
-                  : "ring-gray-200 bg-gray-50",
-                "rounded-3xl py-8 px-6 ring-1 xl:py-10 0"
-              )}
-            >
-              <h3
-                id={tier.id}
-                className={classNames(
-                  tier.featured ? "text-white" : "text-gray-900",
-                  "text-lg font-semibold leading-8"
-                )}
-              >
-                {tier.name}
-              </h3>
-              <p
-                className={classNames(
-                  tier.featured ? "text-gray-300" : "text-gray-600",
-                  "mt-4 text-sm leading-6"
-                )}
-              >
-                {tier.description}
-              </p>
-              <p className="mt-6 flex items-baseline gap-x-1">
-                <span
-                  className={classNames(
-                    tier.featured ? "text-white" : "text-gray-900",
-                    "text-4xl font-bold tracking-tight"
-                  )}
-                >
-                  {typeof tier.price === "string"
-                    ? tier.price
-                    : tier.price[frequency.value]}
-                </span>
+          {tiers.map((tier) => {
+            const loading =
+              navigation.state === "submitting" &&
+              navigation?.formData?.get("gibs") === tier.id;
 
-                {tier?.hideFrequency ? null : typeof tier.price !== "string" ? (
-                  <span
-                    className={classNames(
-                      tier.featured ? "text-gray-300" : "text-gray-600",
-                      "text-sm font-semibold leading-6"
-                    )}
-                  >
-                    {frequency.priceSuffix}
-                  </span>
-                ) : null}
-              </p>
-              {tier.priceSubtext ? (
-                <span className="text-gray-500 text-xs">
-                  {tier.priceSubtext}
-                </span>
-              ) : null}
-              <a
-                href={tier.href}
-                onClick={(e) => e.preventDefault()}
-                aria-describedby={tier.id}
+            return (
+              <div
+                key={tier.id}
                 className={classNames(
                   tier.featured
-                    ? "bg-white/10 text-white hover:bg-white/20 focus-visible:outline-white"
-                    : "bg-indigo-600 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-indigo-600",
-                  "mt-6 hover:cursor-not-allowed block rounded-md py-2 px-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                    ? "bg-gray-900 ring-gray-900"
+                    : "ring-gray-200 bg-gray-50",
+                  "rounded-3xl py-8 px-6 ring-1 xl:py-10 0"
                 )}
               >
-                {tier.cta}
-              </a>
-              <ul
-                className={classNames(
-                  tier.featured ? "text-gray-300" : "text-gray-600",
-                  "mt-8 space-y-3 text-sm leading-6 xl:mt-10"
-                )}
-              >
-                {tier.features.map((feature) => (
-                  <li key={feature} className="flex gap-x-3">
-                    <CheckIcon
+                <h3
+                  id={tier.id}
+                  className={classNames(
+                    tier.featured ? "text-white" : "text-gray-900",
+                    "text-lg font-semibold leading-8"
+                  )}
+                >
+                  {tier.name}
+                </h3>
+                <p
+                  className={classNames(
+                    tier.featured ? "text-gray-300" : "text-gray-600",
+                    "mt-4 text-sm leading-6"
+                  )}
+                >
+                  {tier.description}
+                </p>
+                <p className="mt-6 flex items-baseline gap-x-1">
+                  <span
+                    className={classNames(
+                      tier.featured ? "text-white" : "text-gray-900",
+                      "text-4xl font-bold tracking-tight"
+                    )}
+                  >
+                    {typeof tier.price === "string"
+                      ? tier.price
+                      : tier.price[frequency.value]}
+                  </span>
+
+                  {tier?.hideFrequency ? null : typeof tier.price !==
+                    "string" ? (
+                    <span
                       className={classNames(
-                        tier.featured ? "text-white" : "text-indigo-600",
-                        "h-6 w-5 flex-none"
+                        tier.featured ? "text-gray-300" : "text-gray-600",
+                        "text-sm font-semibold leading-6"
                       )}
-                      aria-hidden="true"
-                    />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+                    >
+                      {frequency.priceSuffix}
+                    </span>
+                  ) : null}
+                </p>
+                {tier.priceSubtext ? (
+                  <span className="text-gray-500 text-xs">
+                    {tier.priceSubtext}
+                  </span>
+                ) : null}
+                <div className="flex justify-center">
+                  <Form method="post" action="/">
+                    <input type="hidden" name="gibs" value={tier.id} />
+                    <button
+                      type="submit"
+                      value={`${tier.id}`}
+                      name="_action"
+                      aria-describedby={tier.id}
+                      className={classNames(
+                        tier.featured
+                          ? "bg-white/10 text-white hover:bg-white/20 focus-visible:outline-white"
+                          : "bg-indigo-600 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-indigo-600",
+                        `mt-6 block rounded-md py-2 px-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                          loading
+                            ? "cursor-progress bg-indigo-200 hover:bg-indigo-200"
+                            : ""
+                        }`
+                      )}
+                    >
+                      {loading ? "Creating... (fake delay)" : tier.cta}
+                    </button>
+                  </Form>
+                </div>
+                <ul
+                  className={classNames(
+                    tier.featured ? "text-gray-300" : "text-gray-600",
+                    "mt-8 space-y-3 text-sm leading-6 xl:mt-10"
+                  )}
+                >
+                  {tier.features.map((feature) => (
+                    <li key={feature} className="flex gap-x-3">
+                      <CheckIcon
+                        className={classNames(
+                          tier.featured ? "text-white" : "text-indigo-600",
+                          "h-6 w-5 flex-none"
+                        )}
+                        aria-hidden="true"
+                      />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
         </div>
         {/* <div className="flex flex-col items-start gap-x-8 gap-y-6 rounded-3xl p-8 ring-1 ring-gray-900/10 sm:gap-y-10 sm:p-10 lg:col-span-2 lg:flex-row lg:items-center">
           <div className="lg:min-w-0 lg:flex-1">

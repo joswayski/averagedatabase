@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useActionData,
   useNavigate,
   useRouteError,
 } from "@remix-run/react";
@@ -13,12 +14,108 @@ import {
 import stylesheet from "~/tailwind.css?url";
 import { LinksFunction } from "@remix-run/node";
 import { ArrowLeftCircleIcon } from "@heroicons/react/20/solid";
+import { useEffect } from "react";
+import toast from "react-hot-toast";
+import axios from "axios";
+import { useClipboard } from "@mantine/hooks";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
 ];
 
+export const action = async ({ request }) => {
+  const body = await request.formData();
+  console.log("body", body);
+  console.log("body.entries", Object.fromEntries(body));
+  const { _action, ...values } = Object.fromEntries(body);
+
+  console.log("values", values);
+  console.log("action", _action);
+  try {
+    // Random number between 200 and 2000
+    const random = Math.floor(Math.random() * 1800) + 200;
+
+    await new Promise((resolve) => setTimeout(resolve, random));
+    const key = await axios.post("http://0.0.0.0:80/gibs-key", {});
+    console.log("success", key.data);
+    // console.log("key", key);
+    return key.data;
+  } catch (error) {
+    console.error("error", error);
+    return null;
+  }
+};
+
+const ToastContent = ({ apiKey, sponsorMessage }) => {
+  const clipboard = useClipboard({ timeout: 3000 });
+
+  return (
+    <div className="bg-white rounded-md drop-shadow p-3  flex flex-col  h-full  flex-grow max-w-xl">
+      <div className="">
+        <div className="text-lg font-bold text-slate-800">
+          Your API key has been created!
+        </div>
+        <p>
+          {clipboard.copied ? `Copied! ✅` : "Click to copy ➡️"}
+          <button
+            className={`ml-4 font-bold text-indigo-600 p-1 border border-slate-200 rounded-md hover:bg-slate-100`}
+            onClick={() => {
+              clipboard.copy(apiKey);
+            }}
+          >
+            {apiKey}
+          </button>
+
+          <Link
+            to={{
+              pathname: "/docs",
+            }}
+            className="text-indigo-600 font-semibold hover:underline pl-4"
+          >
+            View Docs
+          </Link>
+        </p>
+      </div>
+      <div className="pt-2 ">
+        <p className="text-sm text-slate-400">Sponsor:</p>
+        <p className="text-sm text-slate-600 font-semibold">{sponsorMessage}</p>
+      </div>
+    </div>
+  );
+};
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const data = useActionData<any>();
+
+  useEffect(() => {
+    if (data?.api_key) {
+      toast.custom(
+        (t) => (
+          <ToastContent
+            apiKey={data.api_key}
+            sponsorMessage={data.brought_to_you_by}
+          />
+        ),
+        {
+          duration: 5000, // Adjust as needed
+        }
+      );
+    }
+  }, [data]);
+
+  // useEffect(() => {
+  //   if (data?.api_key) {
+  //     console.log("api_key", data.api_key);
+  //   }
+  // }, [data?.api_key]);
+
+  // if (data?.api_key && !toastRef.current) {
+  //   toastRef.current = true;
+  //   // console.log(navigation.formData.get("gibs"));
+  //   toast.success(`Successfully toasted! -`);
+  //   toastRef.current = false;
+  // }
+
   return (
     <html lang="en">
       <head>
