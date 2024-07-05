@@ -25,23 +25,17 @@ export const links: LinksFunction = () => [
 
 export const action = async ({ request }) => {
   const body = await request.formData();
-  console.log("body", body);
-  console.log("body.entries", Object.fromEntries(body));
+
   const { _action, ...values } = Object.fromEntries(body);
 
-  console.log("values", values);
-  console.log("action", _action);
   try {
     // Random number between 200 and 2000
     const random = Math.floor(Math.random() * 1800) + 200;
 
     await new Promise((resolve) => setTimeout(resolve, random));
-    const key = await axios.post("http://0.0.0.0:80/gibs-key", {});
-    console.log("success", key.data);
-    // console.log("key", key);
+    const key = await axios.post("http://0.0.0.0:80/api/gibs-key", {});
     return key.data;
   } catch (error) {
-    console.error("error", error);
     return null;
   }
 };
@@ -100,21 +94,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
           duration: 5000, // Adjust as needed
         }
       );
+    } else {
+      toast.error(
+        "Sorry bruh we failed to get the key. Ping us on twitter idk whats wrong we don't have logs yet"
+      );
     }
   }, [data]);
-
-  // useEffect(() => {
-  //   if (data?.api_key) {
-  //     console.log("api_key", data.api_key);
-  //   }
-  // }, [data?.api_key]);
-
-  // if (data?.api_key && !toastRef.current) {
-  //   toastRef.current = true;
-  //   // console.log(navigation.formData.get("gibs"));
-  //   toast.success(`Successfully toasted! -`);
-  //   toastRef.current = false;
-  // }
 
   return (
     <html lang="en">

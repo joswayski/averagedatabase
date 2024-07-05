@@ -191,12 +191,12 @@ export const Pricing = () => {
                       className={classNames(
                         tier.featured
                           ? "bg-white/10 text-white hover:bg-white/20 focus-visible:outline-white"
-                          : "bg-indigo-600 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-indigo-600",
-                        `mt-6 block rounded-md py-2 px-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
-                          loading
-                            ? "cursor-progress bg-indigo-200 hover:bg-indigo-200"
-                            : ""
-                        }`
+                          : `${
+                              loading
+                                ? "bg-indigo-200 hover:bg-indigo-200 cursor-progress"
+                                : "hover:bg-indigo-500 bg-indigo-600"
+                            } text-white shadow-sm  focus-visible:outline-indigo-600`,
+                        `mt-6 block rounded-md py-2 px-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2                         }`
                       )}
                     >
                       {loading ? "Creating... (fake delay)" : tier.cta}
