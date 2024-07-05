@@ -6,21 +6,19 @@ use serde_derive::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 use tracing_subscriber;
 extern crate lru;
-use chrono::Utc;
-
-use lru::LruCache;
-use std::{num::NonZeroUsize, sync::Arc};
-use tower::ServiceBuilder;
 
 use axum::{
     extract::{DefaultBodyLimit, Extension, Query, Request},
-    http::StatusCode,
+    http::{header::CONTENT_TYPE, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Json, Response},
     routing::{get, post},
     Router,
 };
+use lru::LruCache;
 use serde_json::Value;
+use std::{num::NonZeroUsize, sync::Arc};
+use tower::ServiceBuilder;
 
 const ADS: &[&str; 100] = &[
     "Tempur-Pedic: Experience the ultimate comfort with Tempur-Pedic mattresses.",
@@ -132,18 +130,18 @@ async fn main() {
     let cache: Arc<Mutex<LruCache<String, String>>> =
         Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
 
-    let with_auth = Router::new()
-        .route(
-            "/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
-            post(add_item),
-        )
-        .route("/gibs-item", get(gibs_item))
-        .layer(middleware::from_fn(check_for_key));
-
     let app = Router::new()
-        .route("/", get(root))
-        .merge(with_auth)
-        .route("/gibs-key", get(gibs_key))
+        .route("/api", get(root))
+        .route("/api/", get(root))
+        .route(
+            "/api/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
+            post(add_item).layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
+        .route(
+            "/api/gibs-item",
+            get(gibs_item).layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
+        .route("/api/gibs-key", post(gibs_key))
         .layer(
             ServiceBuilder::new()
                 .layer(Extension(cache))
@@ -169,41 +167,47 @@ async fn check_for_key(
     Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
     mut req: Request,
     next: Next,
-) -> Response {
-    let api_key = req
-        .headers()
-        .get("averagedb-api-key")
-        .and_then(|value| value.to_str().ok())
-        .map(|s| s.to_string());
-
-    if api_key.is_none() {
-        return (
+) -> Result<Response, Response> {
+    let header_value = req.headers().get("x-averagedb-api-key").ok_or_else(|| {
+        (
             StatusCode::UNAUTHORIZED,
-            "You must provide an API key in the 'averagedb-api-key' header".to_string(),
+            "You must provide an API key in the 'x-averagedb-api-key' header",
         )
-            .into_response();
-    }
+            .into_response()
+    })?;
 
-    let api_key = api_key.unwrap();
+    let api_key = header_value
+        .to_str()
+        .map_err(|_| {
+            (
+                StatusCode::BAD_REQUEST,
+                "The 'x-averagedb-api-key header is not a valid string",
+            )
+        })
+        .map(ToString::to_string)
+        .map_err(|_| {
+            (
+                StatusCode::BAD_REQUEST,
+                "The 'x-averagedb-api-key' header contains invalid characters",
+            )
+                .into_response()
+        })?;
 
     if api_key.is_empty() {
-        return (
+        return Err((
             StatusCode::BAD_REQUEST,
-            "The 'averagedb-api key' header must not be empty".to_string(),
+            "The 'x-averagedb-api-key' header must not be empty",
         )
-            .into_response();
+            .into_response());
     }
 
     if !cache.lock().await.contains(&api_key) {
-        return (
-            StatusCode::UNAUTHORIZED,
-            "Get a valid key first dummy".to_string(),
-        )
-            .into_response();
+        return Err((StatusCode::UNAUTHORIZED, "Get a valid key first dummy").into_response());
     }
 
     req.extensions_mut().insert(api_key);
-    return next.run(req).await;
+
+    Ok(next.run(req).await)
 }
 
 fn get_random_string() -> String {
