@@ -14,5 +14,6 @@ spec:
       port: {{ .defaultContainerPort }}
       # Port that the service is exposed on
       targetPort: {{ .port }}
+  
 {{- end }}
 {{- end }}

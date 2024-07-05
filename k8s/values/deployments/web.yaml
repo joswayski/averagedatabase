@@ -6,3 +6,7 @@ deployments:
     - name: web
       port: 3000
       image: joswayski/averagedatabase:latest
+  # Add environment
+    env:
+      - name: BASE_API_URL
+        value: http://api:80

@@ -33,7 +33,10 @@ export const action = async ({ request }) => {
     const random = Math.floor(Math.random() * 1800) + 200;
 
     await new Promise((resolve) => setTimeout(resolve, random));
-    const key = await axios.post("http://0.0.0.0:80/api/gibs-key", {});
+    const key = await axios.post(
+      `${process.env.BASE_API_URL || "http://localhost:80"} /api/gibs-key`,
+      {}
+    );
     return key.data;
   } catch (error) {
     return null;
