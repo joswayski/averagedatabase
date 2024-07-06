@@ -1,6 +1,6 @@
 import { Dialog, DialogPanel } from "@headlessui/react";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/20/solid";
-import { Link } from "@remix-run/react";
+import { Form, Link, useNavigation } from "@remix-run/react";
 import { useState } from "react";
 
 const navigation = [
@@ -11,7 +11,9 @@ const navigation = [
 
 export const Hero = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigation2 = useNavigation();
 
+  const loading = navigation2.state === "submitting";
   return (
     <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-48">
       <div className="flex justify-center">
@@ -174,9 +176,9 @@ export const Hero = () => {
         </p>
       </div>
 
-      <div className="mt-8 gap-3 flex justify-center">
+      <div className="mt-8 gap-3 flex justify-center space-x-20 items-center">
         <a
-          className="inline-flex justify-center items-center gap-x-3 text-center bg-gradient-to-tl from-blue-600 to-violet-600 hover:from-violet-600 hover:to-blue-600 border border-transparent text-white text-sm font-medium rounded-full py-3 px-4 "
+          className="inline-flex justify-center items-center gap-x-3 text-center bg-white border-2 border-slate-800  text-slate-800 hover:bg-slate-800 hover:text-white text-sm font-medium rounded-full py-3 px-4 "
           href="https://github.com/joswayski/averagedatabase"
           target="_blank"
           rel="noopener noreferrer"
@@ -193,6 +195,22 @@ export const Hero = () => {
           </svg>
           View on GitHub
         </a>
+        <Form method="post" action="/">
+          <input type="hidden" name="gibs" value="didnt-scroll" />
+          <button
+            type="submit"
+            value={`didnt-scroll`}
+            name="_action"
+            aria-describedby={"didnt-scroll"}
+            className={`${
+              loading
+                ? "bg-indigo-200 hover:bg-indigo-200 cursor-progress"
+                : "hover:bg-indigo-500 bg-indigo-600"
+            } text-white shadow-sm  focus-visible:outline-indigo-600  block rounded-md py-2 px-3 text-center text-sm font-semibold leading-6 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 `}
+          >
+            {loading ? "Creating... (fake delay)" : `Get API Key`}
+          </button>
+        </Form>
         {/* <div className="inline-flex justify-center items-center gap-x-3 text-center bg-gradient-to-tl from-teal-600 to-green-600 hover:from-cyan-600 hover:to-emerald-600 border border-transparent text-white text-sm font-medium rounded-full py-3 px-4 ">
           Get API Key
         </div> */}
