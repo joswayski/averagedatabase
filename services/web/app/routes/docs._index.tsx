@@ -57,10 +57,7 @@ export default function Example() {
           <h2 className="text-2xl font-bold leading-10 tracking-tight text-gray-900 mb-4">
             How to use the API
           </h2>
-          <p className="mb-2">
-            Send a <code className="bg-gray-100 px-1 rounded">POST</code>{" "}
-            request to the following base URL
-          </p>
+          <p className="mb-2">Send a request to the following base URL</p>
           <code className="font-bold p-2 block bg-gray-100 rounded break-all">
             https://averagedatabase.com/api
           </code>
