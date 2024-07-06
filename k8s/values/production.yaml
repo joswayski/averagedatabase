@@ -1,0 +1,6 @@
+
+env:
+  ENVIRONMENT:
+    value: production
+  BASE_API_URL:
+    value: http://api.default.svc.cluster.local:80

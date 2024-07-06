@@ -9,14 +9,13 @@ extern crate lru;
 
 use axum::{
     extract::{DefaultBodyLimit, Extension, Query, Request},
-    http::{header::CONTENT_TYPE, StatusCode},
+    http::StatusCode,
     middleware::{self, Next},
     response::{IntoResponse, Json, Response},
     routing::{get, post},
     Router,
 };
 use lru::LruCache;
-use serde_json::Value;
 use std::{num::NonZeroUsize, sync::Arc};
 use tower::ServiceBuilder;
 
@@ -131,8 +130,13 @@ async fn main() {
         Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
 
     let app = Router::new()
+        // k8s check
+        .route("/health", get(health))
         .route("/api", get(root))
         .route("/api/", get(root))
+        .route("/api/u-up", get(health2))
+        // For the people that can't read
+        .route("/api/health", get(health2))
         .route(
             "/api/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
             post(add_item).layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
@@ -148,7 +152,7 @@ async fn main() {
                 .layer(DefaultBodyLimit::max(1024)),
         );
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:80").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
 
@@ -156,6 +160,14 @@ async fn root() -> &'static str {
     "Are you an idiot? Did you forget to look at the docs?"
 }
 
+// k8s
+async fn health() -> &'static str {
+    "Yeah"
+}
+
+async fn health2() -> Response {
+    (StatusCode::OK, "yea").into_response()
+}
 #[derive(Serialize)]
 struct InsertItemResponse {
     message: String,
@@ -244,6 +256,11 @@ struct CreateApiKeyResponse {
     brought_to_you_by: String,
 }
 
+#[derive(Serialize)]
+struct CreateApiKeyError {
+    message: String,
+}
+
 fn get_random_ad() -> String {
     let mut rng: rand::prelude::ThreadRng = rand::thread_rng();
     let index = rng.gen_range(0..ADS.len());
@@ -255,9 +272,7 @@ fn get_api_key() -> String {
     rng.gen_range(1..=1000000).to_string()
 }
 
-async fn gibs_key(
-    Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
-) -> (StatusCode, Json<CreateApiKeyResponse>) {
+async fn gibs_key(Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>) -> Response {
     let mut cache = cache.lock().await;
 
     for _ in 0..10 {
@@ -269,18 +284,17 @@ async fn gibs_key(
                 api_key,
                 brought_to_you_by: get_random_ad(),
             };
-            return (StatusCode::CREATED, Json(res));
+            return (StatusCode::CREATED, Json(res)).into_response();
         }
     }
 
     (
         StatusCode::INTERNAL_SERVER_ERROR,
-        Json(CreateApiKeyResponse {
-            api_key: "".to_string(),
-            brought_to_you_by: "Failed to generate a unique API key sorry bud we're not experts"
-                .to_string(),
+        Json(CreateApiKeyError {
+            message: "Failed to generate a unique API key sorry bud we're not experts".to_string(),
         }),
     )
+        .into_response()
 }
 
 #[derive(Serialize, Deserialize)]

@@ -1,55 +1,53 @@
-# Must start with 'ingress' key
 ingress:
-  name: ingress
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-  rules:
-    - host: "averagedatabase.com"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: web
-                port:
-                  number: 80
-          # - path: /api/
-          #   pathType: Prefix
-          #   backend:
-          #     service:
-          #       name: api
-          #       port:
-          #         number: 80
-    - host: "averagedatabase.com/api/"
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: api
-                port:
-                  number: 80
-    - host: "*.averagedatabase.com" 
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: web
-                port:
-                  number: 80
-  # Temporarily disabled while i get unbanned from lets-encrypt
-  # tls: 
-  #   - hosts:
-  #       - "plutomi.com"
-  #       # HAVE TO USE DNS FOR WILDCARD CERT
-  #       # CURRENTLY BANNED :D
-  #       # https://stackoverflow.com/questions/68219076/cert-manager-no-configured-challenge-solvers-can-be-used-for-this-challenge
-  #       # https://cert-manager.io/docs/configuration/acme/dns01/cloudflare/
-  #       - "services.plutomi.com" # not being used just needed a new cert
-  #     secretName: plutomi-tls-secret
-
-
+  metadata:
+    name: ingress
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+  spec:
+    rules:
+      - host: "averagedatabase.com"
+        http:
+          paths:
+          # Redirect to the API
+            - path: /api/
+              pathType: Prefix
+              backend:
+                service:
+                  name: api
+                  port:
+                    number: 80
+            - path: /api
+              pathType: Prefix
+              backend:
+                service:
+                  name: api
+                  port:
+                    number: 80
+          # Everything else goes to web
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: web
+                  port:
+                    number: 80
+      - host: "*.averagedatabase.com" 
+        http:
+          paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: web
+                  port:
+                    number: 80
+    # tls:
+    #   - hosts:
+    #       - "plutomi.com"
+    #       # YOU HAVE TO USE DNS FOR WILDCARD CERT
+    #       # https://stackoverflow.com/questions/68219076/cert-manager-no-configured-challenge-solvers-can-be-used-for-this-challenge
+    #       # https://cert-manager.io/docs/configuration/acme/dns01/cloudflare/
+    #       # If you get banned for too many cert attempts, just add a new domain
+    #       # and you can create a new cert. Wildcard, ideally, is best.
+    #       - "*.plutomi.com" 
+    #     secretName: plutomi-tls-secret

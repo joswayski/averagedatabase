@@ -34,12 +34,14 @@ export const action = async ({ request }) => {
 
     await new Promise((resolve) => setTimeout(resolve, random));
     const key = await axios.post(
-      `${process.env.BASE_API_URL || "http://localhost:80"} /api/gibs-key`,
+      `${process.env.BASE_API_URL || "http://localhost:80"}/api/gibs-key`,
       {}
     );
     return key.data;
   } catch (error) {
-    return null;
+    console.error(`error man :/`);
+    console.error(error);
+    return { error: "sorry bruh we messed up :/" };
   }
 };
 
@@ -97,10 +99,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
           duration: 5000, // Adjust as needed
         }
       );
-    } else {
-      toast.error(
-        "Sorry bruh we failed to get the key. Ping us on twitter idk whats wrong we don't have logs yet"
-      );
+      return;
+    }
+
+    if (data?.error) {
+      toast.error(data.error);
     }
   }, [data]);
 

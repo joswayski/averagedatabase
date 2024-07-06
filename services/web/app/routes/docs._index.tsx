@@ -1,6 +1,14 @@
 const faqs = [
   {
     id: 1,
+    method: "GET",
+    color: "bg-sky-500",
+    endpoint: "/u-up",
+    text: <p>Will give you a response of:</p>,
+    response: `"yea"`,
+  },
+  {
+    id: 2,
     method: "POST",
     color: "bg-orange-500",
     endpoint:
@@ -21,9 +29,9 @@ const faqs = [
 }`,
   },
   {
-    id: 2,
-    method: "POST",
-    color: "bg-green-500",
+    id: 3,
+    method: "GET",
+    color: "bg-emerald-500",
     endpoint: "/gibs-item",
     text: (
       <p>

@@ -1,9 +1,0 @@
-# Global values that are shared across all 1 or more components
-common:
-  terminationGracePeriodSeconds: 10
-
-databases: {}
-
-deployments: {}
-
-services: {}
