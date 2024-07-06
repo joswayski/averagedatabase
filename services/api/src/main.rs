@@ -3,7 +3,7 @@ extern crate serde_derive;
 use rand::{distributions::Alphanumeric, Rng};
 
 use serde_derive::{Deserialize, Serialize};
-use tokio::sync::Mutex;
+use tokio::{sync::Mutex, time::sleep};
 use tracing_subscriber;
 extern crate lru;
 
@@ -16,7 +16,7 @@ use axum::{
     Router,
 };
 use lru::LruCache;
-use std::{num::NonZeroUsize, sync::Arc};
+use std::{num::NonZeroUsize, sync::Arc, time::Duration};
 use tower::ServiceBuilder;
 
 const ADS: &[&str; 100] = &[
@@ -149,7 +149,8 @@ async fn main() {
         .layer(
             ServiceBuilder::new()
                 .layer(Extension(cache))
-                .layer(DefaultBodyLimit::max(1024)),
+                .layer(DefaultBodyLimit::max(1024))
+                .layer(middleware::from_fn(sorry_bud)),
         );
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await.unwrap();
@@ -250,6 +251,13 @@ async fn add_item(
     (StatusCode::CREATED, Json(res)).into_response()
 }
 
+async fn sorry_bud(req: Request, next: Next) -> Result<Response, Response> {
+    let delay = rand::thread_rng().gen_range(1..=1500);
+
+    sleep(Duration::from_millis(delay)).await;
+
+    Ok(next.run(req).await)
+}
 #[derive(Serialize)]
 struct CreateApiKeyResponse {
     api_key: String,
