@@ -1,44 +1,69 @@
-{{- if .Values.deployments }}
+{{- if .Values.deployment }}
+{{- with .Values.deployment }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.deployments.name }}
+  name: {{ .metadata.name }}
   labels:
-    app: {{ .Values.deployments.name }}
+    app: {{ .metadata.name }}
 spec:
-  replicas: {{ .Values.deployments.replicas }}
+  replicas: {{ .spec.replicas }}
   selector:
     matchLabels:
-      app: {{ .Values.deployments.name }}
+      app: {{ .metadata.name }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: {{ .Values.deployments.maxUnavailable }}
-      maxSurge: {{ .Values.deployments.maxSurge }}
+      maxUnavailable: {{ .spec.strategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .spec.strategy.rollingUpdate.maxSurge }}
   template:
     metadata:
       labels:
-        app: {{ .Values.deployments.name }}
+        app: {{ .metadata.name }}
     spec:
-      terminationGracePeriodSeconds: {{ $.Values.common.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .spec.template.spec.terminationGracePeriodSeconds }}
       containers:
-        {{- range .Values.deployments.containers }}
+        {{- range .spec.template.spec.containers }}
         - name: {{ .name }}
           image: {{ .image }}
+          imagePullPolicy: Always
           ports:
-            - containerPort: {{ .port }}
+            # - name: metrics
+            #   containerPort: {{ .port }}
+            - name: http
+              containerPort: {{ .port }}
           env:
+            # Add the pod name for logging - TODO
             - name: POD_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            {{- range $key, $value := .env }}
+              # Add any shared secrets
+            {{- range $key, $value := $.Values.env }}
             - name: {{ $key }}
+              {{- if $value.value }}
+              value: {{ $value.value | quote }}
+              {{- else if $value.secretKeyRef }}
               valueFrom:
                 secretKeyRef:
-                  name: {{ $value.secretKeyRef.name }}
-                  key: {{ $value.secretKeyRef.key }}
+                  name: {{ $value.secretKeyRef.name | quote }}
+                  key: {{ $value.secretKeyRef.key | quote }}
+              {{- end }}
             {{- end }}
+              # Add application specific secrets
+            {{- range $key, $value := .env }}
+            - name: {{ $key }}
+              {{- if $value.value }}
+              value: {{ $value.value | quote }}
+              {{- else if $value.secretKeyRef }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $value.secretKeyRef.name | quote }}
+                  key: {{ $value.secretKeyRef.key | quote }}
+              {{- end }}
+            {{- end }}  
+
+            
           volumeMounts:
             {{- range .volumeMounts }}
             - name: {{ .name }}
@@ -48,23 +73,18 @@ spec:
           lifecycle:
             preStop:
               exec:
-                command:
-                  [
-                    "sh",
-                    "-c",
-                    "sleep {{ $.Values.deployments.preStopSleepSeconds }}",
-                  ]
+                command: {{ .lifecycle.preStop.exec.command }}
           readinessProbe:
             httpGet:
-              path: {{ $.Values.deployments.healthCheckPath }}
+              path: {{ .readinessProbe.httpGet.path  }}
               port: {{ .port }}
-            initialDelaySeconds: {{ $.Values.deployments.initialDelaySeconds }}
-            periodSeconds: {{ $.Values.deployments.periodSeconds }}
+            initialDelaySeconds: {{ .readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .readinessProbe.periodSeconds }}
             timeoutSeconds: 5
             failureThreshold: 3
         {{- end }}
       volumes:
-        {{- range .Values.deployments.volumes }}
+        {{- range .spec.template.spec.volumes }}
         - name: {{ .name }}
           {{- if .secret }}
           secret:
@@ -76,4 +96,5 @@ spec:
           emptyDir: {}
           {{- end }}
         {{- end }}
+{{- end }}
 {{- end }}

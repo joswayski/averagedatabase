@@ -1,0 +1,38 @@
+service:
+  metadata:
+    name: web
+  spec:
+    # clusterIP: None
+    selector:
+      app: web
+    ports:
+      - port: 80
+        targetPort: 3000
+
+deployment:
+  metadata:
+    name: web
+
+  spec:
+    replicas: 3
+    template:
+      spec:
+        terminationGracePeriodSeconds: 10
+        containers:
+          - name: web
+            image: joswayski/averagedatabase-web:latest
+            port: 3000
+            env:
+            readinessProbe:
+              periodSeconds: 10
+              initialDelaySeconds: 10
+              httpGet:
+                path: /health
+            lifecycle:
+              preStop:
+                exec:
+                  command: ["sh", "-c", "sleep 10"]
+    strategy:
+      rollingUpdate:
+        maxSurge: 1
+        maxUnavailable: 0

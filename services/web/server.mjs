@@ -95,4 +95,7 @@ app.all(
 );
 
 const port = 3000;
-app.listen(port, () => console.log("http://localhost:" + port));
+app.listen(port, () => {
+  console.log("http://localhost:" + port);
+  console.log(`API URL: ${process.env.BASE_API_URL}`);
+});
