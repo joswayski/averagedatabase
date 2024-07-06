@@ -18,10 +18,6 @@ spec:
       maxSurge: {{ .spec.strategy.rollingUpdate.maxSurge }}
   template:
     metadata:
-      # # Disabled for now. Was using too many resources for my little cluster :3
-      # annotations:
-      #   prometheus.io/scrape: "true"
-      #   prometheus.io/port: "9100"
       labels:
         app: {{ .metadata.name }}
     spec:
