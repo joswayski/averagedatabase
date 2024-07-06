@@ -2,7 +2,7 @@ const faqs = [
   {
     id: 1,
     method: "GET",
-    color: "bg-sky-500",
+    color: "bg-emerald-500",
     endpoint: "/u-up",
     text: <p>Will give you a response of:</p>,
     response: `"yea"`,
@@ -37,7 +37,7 @@ const faqs = [
       <p>
         Pass a query param of{" "}
         <code className="text-slate-800 font-bold p-2 block bg-gray-100 ">
-          ?key=YOUR_ITEM_KEY
+          ?key=442104:m0OSzCNyCifpj3mAHGUd
         </code>
         which will give you a response of:
       </p>
