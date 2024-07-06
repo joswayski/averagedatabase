@@ -34,13 +34,14 @@ export const action = async ({ request }) => {
 
     await new Promise((resolve) => setTimeout(resolve, random));
     const key = await axios.post(
-      `${process.env.BASE_API_URL || "http://localhost:80"}/api/gibs-key`,
+      `${process.env.BASE_API_URL || "http://127.0.0.1:8080"}/api/gibs-key`,
       {}
     );
     return key.data;
   } catch (error) {
     console.error(`error man :/`);
     console.error(error);
+    console.error(process.env.BASE_API_URL);
     return { error: "sorry bruh we messed up :/" };
   }
 };
