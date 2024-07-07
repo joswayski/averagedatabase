@@ -65,6 +65,7 @@ const tiers = [
       "Dedicated email support\n\n\n(Mon-Fri 9am-12pm & 2pm-4pm Tokyo time)",
       "Indexes available as a paid addon ($100/index/mo)",
       "Employee pinky promise to not look at customer data to retaliate over a personal grievance",
+      "Bring Your Own API Key™ - use your own generated key to access our API",
       "Backups",
     ],
     featured: true,
