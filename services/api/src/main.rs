@@ -217,7 +217,11 @@ async fn check_for_key(
     let is_poor = !&api_key.starts_with("enterprise-");
 
     if is_poor && !cache.lock().await.contains(&api_key) {
-        return Err((StatusCode::UNAUTHORIZED, "Get a valid key first dummy").into_response());
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            "No way, Jose. Fix your API key. Figure it out.",
+        )
+            .into_response());
     }
 
     req.extensions_mut().insert(api_key);
