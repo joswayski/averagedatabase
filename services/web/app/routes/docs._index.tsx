@@ -69,6 +69,22 @@ export default function Example() {
             and the value being your API key. Endpoints are to the right (or
             below on mobile).
           </p>
+          <div className="rounded-md bg-blue-50 p-4 mt-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <InformationCircleIcon
+                  aria-hidden="true"
+                  className="h-5 w-5 text-blue-400"
+                />
+              </div>
+              <div className="ml-3  flex-1 md:flex md:justify-between">
+                <p className="text-sm text-blue-700">
+                  Enterprise customers can bring their own API keys! Simply
+                  insert any items with whatever key that you want.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
         <div className="lg:w-1/2">
           {faqs.map((faq) => (
@@ -94,3 +110,5 @@ export default function Example() {
     </div>
   );
 }
+
+import { InformationCircleIcon } from "@heroicons/react/20/solid";
