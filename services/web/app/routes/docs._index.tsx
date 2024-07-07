@@ -80,7 +80,7 @@ export default function Example() {
               <div className="ml-3  flex-1 md:flex md:justify-between">
                 <p className="text-sm text-blue-700">
                   Enterprise customers can bring their own API keys! Simply
-                  insert any items with whatever key that you want.
+                  insert any items with whatever key that you want prefixed with <span className='font-bold'>enterprise-</span>
                 </p>
               </div>
             </div>
