@@ -211,9 +211,18 @@ export const Hero = () => {
             {loading ? "Creating... (fake delay)" : `Get API Key`}
           </button>
         </Form>
+
         {/* <div className="inline-flex justify-center items-center gap-x-3 text-center bg-gradient-to-tl from-teal-600 to-green-600 hover:from-cyan-600 hover:to-emerald-600 border border-transparent text-white text-sm font-medium rounded-full py-3 px-4 ">
           Get API Key
         </div> */}
+      </div>
+      <div className="flex justify-center mt-8">
+        <img
+          src="testimonial.png"
+          height={100}
+          width={500}
+          alt="@ctjlewis on X: you’re welcome. best database platform i’ve ever used! kept my grandpa’s pacemaker going."
+        ></img>
       </div>
     </div>
   );
