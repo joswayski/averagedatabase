@@ -5,7 +5,7 @@ const faqs = [
     color: "bg-emerald-500",
     endpoint: "/u-up",
     text: <p>Will give you a response of:</p>,
-    response: `"yea"`,
+    response: `{"message": "Yeah", "brought_to_you_by": "Pantene: Treat your hair with Pantene's new nourishing shampoo."}`,
   },
   {
     id: 2,
@@ -80,7 +80,8 @@ export default function Example() {
               <div className="ml-3  flex-1 md:flex md:justify-between">
                 <p className="text-sm text-blue-700">
                   Enterprise customers can bring their own API keys! Simply
-                  insert any items with whatever key that you want prefixed with <span className='font-bold'>enterprise-</span>
+                  insert any items with whatever key that you want prefixed with{" "}
+                  <span className="font-bold">enterprise-</span>
                 </p>
               </div>
             </div>
