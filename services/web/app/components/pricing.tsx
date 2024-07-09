@@ -66,6 +66,7 @@ const tiers = [
       "Indexes available as a paid addon ($100/index/mo)",
       "Employee pinky promise to not look at customer data to retaliate over a personal grievance",
       "Bring Your Own API Key™ - use your own generated key to access our API",
+      "No Ads in responses",
       "Backups",
     ],
     featured: true,

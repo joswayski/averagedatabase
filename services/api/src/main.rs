@@ -161,13 +161,23 @@ async fn root() -> &'static str {
     "Are you an idiot? Did you forget to look at the docs?"
 }
 
-// k8s
+#[derive(Serialize)]
+struct HealthResponse {
+    message: String,
+    brought_to_you_by: String,
+}
+
 async fn health() -> &'static str {
     "Yeah"
 }
 
 async fn health2() -> Response {
-    (StatusCode::OK, "yea").into_response()
+    let res = HealthResponse {
+        message: "Yeah".to_string(),
+        brought_to_you_by: get_random_ad(),
+    };
+
+    (StatusCode::OK, Json(res)).into_response()
 }
 #[derive(Serialize)]
 struct InsertItemResponse {
