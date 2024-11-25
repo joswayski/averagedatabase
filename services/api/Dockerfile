@@ -1,35 +1,36 @@
-# ########## ARM BUILD ########### - TODO add caching like the below one
-# Builder stage
+# Use an official Rust image as the builder
 FROM rust:1.80 AS builder
 
-# Add the aarch64-unknown-linux-musl target
-RUN rustup target add aarch64-unknown-linux-musl
-
-# Install musl-tools, musl-dev, wget, xz-utils, and ca-certificates
-RUN apt update && apt install -y musl-tools musl-dev wget ca-certificates
-
-# # # Download and install UPX
-# RUN wget https://github.com/upx/upx/releases/download/v4.2.1/upx-4.2.1-arm64_linux.tar.xz \
-#     && tar -xf upx-4.2.1-arm64_linux.tar.xz \
-#     && mv upx-4.2.1-arm64_linux/upx /usr/bin/ \
-#     && rm -rf upx-4.2.1-arm64_linux upx-4.2.1-arm64_linux.tar.xz
-
+# Set the working directory
 WORKDIR /app
 
+# Install dependencies for cross-compilation
+RUN apt update && apt install -y musl-tools musl-dev
+
+# Add the x86_64-unknown-linux-musl target for cross-compilation
+RUN rustup target add x86_64-unknown-linux-musl
+
+# Copy source code into the container
 COPY ./ .
-RUN cargo build --target aarch64-unknown-linux-musl --release
 
-# Compress the executable using UPX
-# RUN upx --best --lzma /app/target/aarch64-unknown-linux-musl/release/api
+# Build the application for the x86_64 architecture
+RUN cargo build --target x86_64-unknown-linux-musl --release
 
-# Final stage
-FROM rust:1.80
+# Final stage: smaller runtime image
+FROM debian:buster-slim
 
-# Copy CA certificates from the builder stage
-COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+# Install minimal dependencies
+RUN apt update && apt install -y ca-certificates && apt clean && rm -rf /var/lib/apt/lists/*
 
-EXPOSE 8080
+# Set working directory
 WORKDIR /app
-COPY --from=builder /app/target/aarch64-unknown-linux-musl/release/api ./api
-CMD ["/app/api"]
 
+# Copy CA certificates and built executable from the builder stage
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/api ./api
+
+# Expose application port
+EXPOSE 8080
+
+# Command to run the application
+CMD ["/app/api"]
