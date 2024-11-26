@@ -134,8 +134,6 @@ async fn main() {
         .route("/health", get(health))
         .route("/", get(root))
         .route("/u-up", get(health2))
-        // For the people that can't read
-        .route("/health", get(health2))
         .route(
             "/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
             post(add_item).layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
