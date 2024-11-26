@@ -133,7 +133,6 @@ async fn main() {
         // k8s check
         .route("/health", get(health))
         .route("/", get(root))
-        .route("/", get(root))
         .route("/u-up", get(health2))
         // For the people that can't read
         .route("/health", get(health2))
