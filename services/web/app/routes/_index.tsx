@@ -48,13 +48,13 @@ export default function Index() {
             This domain has been seized by the Federal Bureau of Investigation
             in accordance with a seizure warrant pursuant to 18 U.S.C. §§
             981(b), 982(b)(1), 2323(a)(2), 2323(b)(2), 21 U.S.C. § 853(f) issued
-            by the United States District Court for the Eastern District of New
+            by the United States District Court for the Southern District of New
             York as part of a joint law enforcement operation and action by:
           </p>
 
           <div className="space-y-2 italic text-xl font-bold">
             <p>
-              The United States Attorney&apos;s Office for the Eastern District
+              The United States Attorney&apos;s Office for the Southern District
               of New York
             </p>
             <p>Federal Bureau of Investigation</p>
