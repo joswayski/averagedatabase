@@ -132,7 +132,7 @@ async fn main() {
     let app = Router::new()
         // k8s check
         .route("/health", get(health))
-        .route("", get(root))
+        .route("/", get(root))
         .route("/", get(root))
         .route("/u-up", get(health2))
         // For the people that can't read
