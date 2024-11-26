@@ -1,7 +1,0 @@
-# Default values
-env:
-  ENVIRONMENT:
-    value: development
-
-  BASE_API_URL:
-    value: http://localhost:80

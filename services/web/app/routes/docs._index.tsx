@@ -59,7 +59,7 @@ export default function Example() {
           </h2>
           <p className="mb-2">Send a request to the following base URL</p>
           <code className="font-bold p-2 block bg-gray-100 rounded break-all">
-            https://averagedatabase.com/api
+            https://api.averagedatabase.com
           </code>
           <p className="mt-4">
             with the header{" "}

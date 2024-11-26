@@ -132,20 +132,20 @@ async fn main() {
     let app = Router::new()
         // k8s check
         .route("/health", get(health))
-        .route("/api", get(root))
-        .route("/api/", get(root))
-        .route("/api/u-up", get(health2))
+        .route("", get(root))
+        .route("/", get(root))
+        .route("/u-up", get(health2))
         // For the people that can't read
-        .route("/api/health", get(health2))
+        .route("/health", get(health2))
         .route(
-            "/api/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
+            "/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
             post(add_item).layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
         )
         .route(
-            "/api/gibs-item",
+            "/gibs-item",
             get(gibs_item).layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
         )
-        .route("/api/gibs-key", post(gibs_key))
+        .route("/gibs-key", post(gibs_key))
         .layer(
             ServiceBuilder::new()
                 .layer(Extension(cache))
