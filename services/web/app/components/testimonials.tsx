@@ -36,7 +36,7 @@ const testimonials = [
     ],
     [
       {
-        body: "I personally chose all my technology based on how handsome the CEO is.",
+        body: "I personally choose all my technology based on how handsome the CEO is.",
         author: {
           name: "Josh Manders",
           handle: "joshmanders",
