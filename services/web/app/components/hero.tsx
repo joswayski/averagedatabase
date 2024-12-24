@@ -1,5 +1,5 @@
 import { Dialog, DialogPanel } from "@headlessui/react";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/20/solid";
+import { XMarkIcon } from "@heroicons/react/20/solid";
 import { Form, Link, useNavigation } from "@remix-run/react";
 import { useState } from "react";
 
@@ -15,39 +15,25 @@ export const Hero = () => {
 
   const loading = navigation2.state === "submitting";
   return (
-    <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-48">
-      <div className="flex justify-center">
-        <header className="fixed inset-x-0 top-0 z-50 bg-zinc-50">
+    <div className="max-w-[85rem] mx-auto px-4  sm:px-6 lg:px-8 pt-48 pb-48 ">
+      <div className="flex justify-center max-w-8xl ">
+        <header className="fixed inset-x-0 top-0 z-50 bg-zinc-50 flex flex-row max-w-8xl ">
           <nav
-            className="flex items-center justify-between lg:px-8"
-            aria-label="Global"
+            className="fixed top-4 left-1/2 -translate-x-1/2 
+         bg-white shadow-md px-6 py-3
+         flex items-center space-x-6 
+         rounded-xl"
           >
-            <div className="flex lg:flex-1">
-              <a
-                href="https://github.com/joswayski/averagedatabase"
-                className="-m-1.5 p-1.5"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <span className="sr-only">AverageDB</span>
-                <img
-                  className="h-10 w-auto"
-                  src="logo-sm.png"
-                  alt="Average Labs LLC logo"
-                />
-              </a>
+            <div className="flex items-center space-x-2">
+              <img
+                className="h-10 w-auto"
+                src="logo-sm.png"
+                alt="Average Labs LLC logo"
+              />{" "}
+              {/* <span className="text-xl font-bold">MyApp</span> */}
             </div>
-            <div className="flex lg:hidden">
-              <button
-                type="button"
-                className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-400"
-                onClick={() => setMobileMenuOpen(true)}
-              >
-                <span className="sr-only">Open main menu</span>
-                <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-              </button>
-            </div>
-            <div className="hidden lg:flex lg:gap-x-12">
+
+            <ul className="flex items-center space-x-4">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
@@ -65,19 +51,9 @@ export const Hero = () => {
                   </span>
                 </Link>
               ))}
-            </div>
-            <div className="hidden lg:flex  lg:flex-1 lg:justify-end">
-              <a
-                href="https://github.com/joswayski/averagedatabase"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-semibold leading-6 text-slate-600 flex flex-col justify-center items-center"
-              >
-                Log in
-                <p className="text-slate-300">(coming soon!)</p>
-              </a>
-            </div>
+            </ul>
           </nav>
+
           <Dialog
             className="lg:hidden"
             open={mobileMenuOpen}
@@ -211,18 +187,6 @@ export const Hero = () => {
             {loading ? "Creating... (fake delay)" : `Get API Key`}
           </button>
         </Form>
-
-        {/* <div className="inline-flex justify-center items-center gap-x-3 text-center bg-gradient-to-tl from-teal-600 to-green-600 hover:from-cyan-600 hover:to-emerald-600 border border-transparent text-white text-sm font-medium rounded-full py-3 px-4 ">
-          Get API Key
-        </div> */}
-      </div>
-      <div className="flex justify-center mt-8">
-        <img
-          src="testimonial.png"
-          height={100}
-          width={500}
-          alt="@ctjlewis on X: you’re welcome. best database platform i’ve ever used! kept my grandpa’s pacemaker going."
-        ></img>
       </div>
     </div>
   );
