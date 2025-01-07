@@ -34,7 +34,7 @@ export const action = async ({ request }) => {
 
     await new Promise((resolve) => setTimeout(resolve, random));
     const key = await axios.post(
-      `"https://api.averagedatabase.com/gibs-key`,
+      `https://api.averagedatabase.com/gibs-key`,
       {}
     );
     return key.data;
