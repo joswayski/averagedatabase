@@ -36,7 +36,7 @@ export const action = async ({ request }) => {
     const key = await axios.post(
       `${
         process.env.BASE_API_URL || "https://api.averagedatabase.com"
-      }/api/gibs-key`,
+      }/gibs-key`,
       {}
     );
     return key.data;
