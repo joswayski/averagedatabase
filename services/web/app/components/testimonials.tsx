@@ -1,4 +1,4 @@
-const featuredTestimonial = {
+const featuredTestimonialPlanetscale = {
   body: "im an AvgDB power user",
   author: {
     name: "Sam Lambert",
@@ -9,6 +9,24 @@ const featuredTestimonial = {
   },
   xeet: "https://x.com/isamlambert/status/1858310132071039208",
 };
+
+const featuredTestimonialPostgres = {
+  body: "Hard to compete with this...",
+  author: {
+    name: "Paul Copplestone",
+    handle: "kiwicopple",
+    imageUrl:
+      "https://pbs.twimg.com/profile_images/1664343166630109202/xcBMGPSE_400x400.jpg",
+    logoUrl:
+      "https://lsvp.com/wp-content/uploads/2023/03/Supabase.png?1708195445",
+  },
+  xeet: "https://x.com/kiwicopple/status/1885081081592123556",
+};
+
+function classNames(...classes) {
+  return classes.filter(Boolean).join(" ");
+}
+
 const testimonials = [
   [
     [
@@ -85,10 +103,6 @@ const testimonials = [
   ],
 ];
 
-function classNames(...classes) {
-  return classes.filter(Boolean).join(" ");
-}
-
 export const Testimonials = () => {
   return (
     <div className="relative isolate bg-white pb-32 pt-24 sm:pt-32">
@@ -122,31 +136,66 @@ export const Testimonials = () => {
             Testimonials
           </p>
         </div>
-        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 grid-rows-1 gap-8 text-sm/6 text-gray-900 sm:mt-20 sm:grid-cols-2 xl:mx-0 xl:max-w-none xl:grid-flow-col xl:grid-cols-4">
-          <figure className="rounded-2xl bg-white shadow-lg ring-1 ring-gray-900/5 sm:col-span-2 xl:col-start-2 xl:row-end-1">
+        <div className="flex flex-col space-y-6 lg:flex-row lg:space-y-0 lg:space-x-6 xl:justify-center mt-14 w-full mb-12">
+          <a
+            href={featuredTestimonialPlanetscale.xeet}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-2xl bg-white shadow-lg ring-1 ring-gray-900/5 flex flex-col w-full lg:w-1/2"
+          >
             <blockquote className="p-6 text-lg font-semibold tracking-tight text-gray-900 sm:p-12 sm:text-xl/8">
-              <p>{`“${featuredTestimonial.body}”`}</p>
+              <p>{`“${featuredTestimonialPlanetscale.body}”`}</p>
             </blockquote>
             <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-4 border-t border-gray-900/10 px-6 py-4 sm:flex-nowrap">
               <img
                 alt=""
-                src={featuredTestimonial.author.imageUrl}
+                src={featuredTestimonialPlanetscale.author.imageUrl}
                 className="size-10 flex-none rounded-full bg-gray-50"
               />
               <div className="flex-auto">
                 <div className="font-semibold">
-                  {featuredTestimonial.author.name}
+                  {featuredTestimonialPlanetscale.author.name}
                 </div>
-                <div className="text-gray-600">{`@${featuredTestimonial.author.handle}`}</div>
+                <div className="text-gray-600">{`@${featuredTestimonialPlanetscale.author.handle}`}</div>
               </div>
               <img
                 alt=""
-                src={featuredTestimonial.author.logoUrl}
+                src={featuredTestimonialPlanetscale.author.logoUrl}
                 className="h-10 w-auto flex-none"
               />
             </figcaption>
-          </figure>
+          </a>
+          <a
+            href={featuredTestimonialPostgres.xeet}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-2xl bg-white shadow-lg ring-1 ring-gray-900/5 flex flex-col w-full lg:w-1/2"
+          >
+            <blockquote className="p-6 text-lg font-semibold tracking-tight text-gray-900 sm:p-12 sm:text-xl/8">
+              <p>{`“${featuredTestimonialPostgres.body}”`}</p>
+            </blockquote>
+            <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-4 border-t border-gray-900/10 px-6 py-4 sm:flex-nowrap">
+              <img
+                alt=""
+                src={featuredTestimonialPostgres.author.imageUrl}
+                className="size-10 flex-none rounded-full bg-gray-50"
+              />
+              <div className="flex-auto">
+                <div className="font-semibold">
+                  {featuredTestimonialPostgres.author.name}
+                </div>
+                <div className="text-gray-600">{`@${featuredTestimonialPostgres.author.handle}`}</div>
+              </div>
+              <img
+                alt=""
+                src={featuredTestimonialPostgres.author.logoUrl}
+                className="h-10 w-auto flex-none"
+              />
+            </figcaption>
+          </a>
+        </div>
 
+        <div className="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 gap-8 text-sm/6 w-full  text-gray-900 sm:grid-cols-2 xl:mx-0 xl:max-w-none xl:grid-flow-col xl:grid-cols-4">
           {testimonials.map((columnGroup, columnGroupIdx) => (
             <div
               key={columnGroupIdx}
