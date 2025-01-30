@@ -1,6 +1,5 @@
 import { ArrowLeftCircleIcon } from "@heroicons/react/20/solid";
 import { Link, Outlet } from "@remix-run/react";
-import { PaywallOverlay } from "..//components/paywall_overlay";
 
 export default function DocsPage() {
   return (
@@ -18,9 +17,8 @@ export default function DocsPage() {
             Go back
           </Link>
         </div>
-        <PaywallOverlay>
-          <Outlet />
-        </PaywallOverlay>
+
+        <Outlet />
       </div>
     </div>
   );
