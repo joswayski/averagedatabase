@@ -85,7 +85,7 @@ const data = [
 export function BarCharts() {
   return (
     <div className="w-full flex justify-center items-center ">
-      <div className="  max-w-7xl w-full ">
+      <div className="max-w-7xl w-full">
         <h1 className="font-bold text-xl text-center py-4">
           The numbers don&apos;t lie.
         </h1>
