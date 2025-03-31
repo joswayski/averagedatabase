@@ -31,7 +31,7 @@ export default function Index() {
         <Logos />
         <Pricing />
         <Footer />
-      </div>
+      </div>    
     </>
   );
 }

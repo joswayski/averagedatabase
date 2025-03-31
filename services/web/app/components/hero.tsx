@@ -15,21 +15,21 @@ export const Hero = () => {
 
   const loading = navigation2.state === "submitting";
   return (
-    <div className="max-w-[85rem] mx-auto px-4  sm:px-6 lg:px-8 pt-48 pb-48 ">
+    <div className="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 pt-48 pb-48 ">
       <div className="flex justify-center max-w-8xl ">
         <header className="fixed inset-x-0 top-0 z-50 bg-zinc-50 flex flex-row max-w-8xl ">
           <nav
-            className="fixed top-4 left-1/2 -translate-x-1/2 
+            className="fixed top-4 left-1/2 -translate-x-1/2
          bg-white shadow-md px-6 py-3
-         flex items-center space-x-6 
-         rounded-xl"
+         flex items-center space-x-6
+         rounded-xl justify-center"
           >
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-shrink-0">
               <img
-                className="h-10 w-auto"
+                className="h-5 sm:h-10 w-auto"
                 src="logo-sm.png"
                 alt="Average Labs LLC logo"
-              />{" "}
+              />
               {/* <span className="text-xl font-bold">MyApp</span> */}
             </div>
 
