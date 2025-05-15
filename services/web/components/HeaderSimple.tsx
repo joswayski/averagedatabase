@@ -3,6 +3,7 @@ import { Burger, Container, Group } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 
 const links = [
+  { link: '/benchmarks', label: 'Benchmarks' },
   { link: '/docs', label: 'Docs' },
   { link: '/pricing', label: 'Pricing' },
   { link: '/blog', label: 'Blog' }];

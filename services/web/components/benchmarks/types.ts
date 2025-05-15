@@ -15,6 +15,11 @@ export interface PricingDataPoint {
   price: number;
 }
 
+export interface BackupRestorationPoint {
+  size: string;
+  minutes: number;
+}
+
 export interface BenchmarkData extends Database {
-  data: QueryLatencyDataPoint[] | PricingDataPoint[];
+  data: QueryLatencyDataPoint[] | PricingDataPoint[] | BackupRestorationPoint[];
 }

@@ -1,4 +1,4 @@
-import { type Database } from "./types"
+import { type Database } from "./types";
 
 // Generate random data points with some variance but keeping AvgDB consistently better
 const generateDataPoints = (
@@ -115,6 +115,33 @@ export const pricingData = databases.map((db) => ({
     {
       cpu: "16 CPU",
       price: db.id === "avgdb" ? 0.24 : 0.32 + Math.random() * 0.48,
+    },
+  ],
+}));
+
+// Backup Restoration Data (minutes to restore different data sizes)
+export const backupRestorationData = databases.map((db) => ({
+  ...db,
+  data: [
+    {
+      size: "100 GB",
+      minutes: db.id === "avgdb" ? 3 : 5 + Math.random() * 5,
+    },
+    {
+      size: "500 GB",
+      minutes: db.id === "avgdb" ? 12 : 20 + Math.random() * 15,
+    },
+    {
+      size: "1 TB",
+      minutes: db.id === "avgdb" ? 22 : 35 + Math.random() * 25,
+    },
+    {
+      size: "5 TB",
+      minutes: db.id === "avgdb" ? 95 : 160 + Math.random() * 80,
+    },
+    {
+      size: "10 TB",
+      minutes: db.id === "avgdb" ? 180 : 300 + Math.random() * 120,
     },
   ],
 }));

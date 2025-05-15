@@ -38,12 +38,14 @@ export function QueryLatency({ enabledDbs }: QueryLatencyProps) {
         dataKey="date"
         series={enabledData.map(db => ({
           name: db.name,
-          color: db.color
+          color: db.color,
+          opacity: 0.6
         }))}
-        curveType="monotone"
+        curveType="step"
         tickLine="xy"
-        gridAxis="xy"
+        gridAxis="x"
         withLegend
+        withGradient={true}
         legendProps={{ verticalAlign: 'bottom' }}
       />
     </Stack>

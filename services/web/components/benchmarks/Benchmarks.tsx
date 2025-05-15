@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Card, Tabs, Group, Switch, Text, Stack } from '@mantine/core';
+import { Card, Group, Switch, Text, Stack, Center, SegmentedControl } from '@mantine/core';
+import { IconClock, IconDatabase } from '@tabler/icons-react';
 import { QueryLatency } from './query-latency/QueryLatency';
-import { Pricing } from './pricing/Pricing';
+import { BackupRestoration } from './backup-restoration/BackupRestoration';
 import { databases } from './data';
 
 export function Benchmarks() {
-  const [activeTab, setActiveTab] = useState<string | null>('query-latency');
+  const [activeTab, setActiveTab] = useState<string>('query-latency');
   const [enabledDbs, setEnabledDbs] = useState<Record<string, boolean>>(
     Object.fromEntries(databases.map(db => [db.id, true]))
   );
@@ -17,6 +18,23 @@ export function Benchmarks() {
     }));
   };
 
+  const renderBenchmark = () => {
+    switch (activeTab) {
+      case 'query-latency':
+        return <QueryLatency enabledDbs={enabledDbs} />;
+      case 'backup':
+        return <BackupRestoration enabledDbs={enabledDbs} />;
+      default:
+        return null;
+    }
+  };
+
+  // Convert Mantine color to CSS variable
+  const getColorVar = (color: string) => {
+    const [baseColor, shade = '6'] = color.split('.');
+    return `var(--mantine-color-${baseColor}-${shade})`;
+  };
+
   return (
     <div className="py-16">
       <div className="container mx-auto px-4">
@@ -26,6 +44,34 @@ export function Benchmarks() {
         </Text>
 
         <Card shadow="sm" padding="lg" radius="md" withBorder className="mb-8">
+          <Group justify="center" className="mb-8">
+            <SegmentedControl
+              value={activeTab}
+              onChange={setActiveTab}
+              data={[
+                {
+                  value: 'query-latency',
+                  label: (
+                    <Center style={{ gap: 10 }}>
+                      <IconClock size={16} />
+                      <span>Query Latency</span>
+                    </Center>
+                  ),
+                },
+                {
+                  value: 'backup',
+                  label: (
+                    <Center style={{ gap: 10 }}>
+                      <IconDatabase size={16} />
+                      <span>Backup Restore</span>
+                    </Center>
+                  ),
+                },
+              ]}
+              size="lg"
+            />
+          </Group>
+
           <Group justify="center" className="mb-6">
             {databases.map((db) => (
               <Switch
@@ -35,24 +81,18 @@ export function Benchmarks() {
                 label={db.name}
                 labelPosition="left"
                 className="mx-2"
+                color={db.color}
+                styles={{
+                  track: {
+                    backgroundColor: enabledDbs[db.id] ? getColorVar(db.color) : undefined,
+                    borderColor: enabledDbs[db.id] ? getColorVar(db.color) : undefined,
+                  }
+                }}
               />
             ))}
           </Group>
 
-          <Tabs value={activeTab} onChange={setActiveTab}>
-            <Tabs.List grow className="mb-6">
-              <Tabs.Tab value="query-latency">Query Latency</Tabs.Tab>
-              <Tabs.Tab value="pricing">Pricing</Tabs.Tab>
-            </Tabs.List>
-
-            <Tabs.Panel value="query-latency">
-              <QueryLatency enabledDbs={enabledDbs} />
-            </Tabs.Panel>
-
-            <Tabs.Panel value="pricing">
-              <Pricing enabledDbs={enabledDbs} />
-            </Tabs.Panel>
-          </Tabs>
+          {renderBenchmark()}
         </Card>
       </div>
     </div>
