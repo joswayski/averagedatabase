@@ -9,7 +9,7 @@ const links = [
 
 export function HeaderSimple() {
   const [opened, { toggle }] = useDisclosure(false);
-  const [active, setActive] = useState(links[0].link);
+  const [active, setActive] = useState('');
 
   const items = links.map((link) => (
     <a

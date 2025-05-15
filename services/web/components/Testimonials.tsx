@@ -76,11 +76,11 @@ export function Testimonials() {
   const regular = testimonials.filter(t => !t.featured);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-16">
+    <div className="max-w-7xl mx-auto px-4 py-4">
       <Container size={700} className="py-20 pb-12">
 
         <Title className="leading-none text-center mt-8" order={2}>
-          AvgDB is <span className="bg-rose-100 px-1.5 rounded-sm inline-block ">loved</span> by everyone
+          AvgDB is <span className="bg-rose-100 px-1.5 rounded-sm inline-block ">loved</span> by everyone ❤️
         </Title>
 
         <Container size={660} p={0}>
@@ -99,7 +99,7 @@ export function Testimonials() {
             href={t.xeet}
             target="_blank"
             rel="noopener noreferrer"
-            className="group bg-white rounded-2xl shadow-lg px-4 py-7 flex flex-col transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:bg-yellow-50/10"
+            className="group bg-white rounded-2xl shadow-lg p-6 flex flex-col transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:bg-yellow-50/10"
           >
             <div className="flex flex-row items-center justify-between gap-2 mb-6 w-full">
               <div className="flex items-center gap-4">
