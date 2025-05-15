@@ -1,45 +1,22 @@
-# Use a small base image and multi-stage builds to reduce final image size
-FROM node:20.2.0-alpine3.18 as base
-
-# Install dependencies and build tools
-FROM base as builder
+FROM node:20-alpine AS development-dependencies-env
+COPY . /app
 WORKDIR /app
-COPY package*.json ./
-# Install all dependencies, including devDependencies for building
 RUN npm ci
 
-COPY . .
-# Compile TypeScript to JavaScript
+FROM node:20-alpine AS production-dependencies-env
+COPY ./package.json package-lock.json /app/
+WORKDIR /app
+RUN npm ci --omit=dev
+
+FROM node:20-alpine AS build-env
+COPY . /app/
+COPY --from=development-dependencies-env /app/node_modules /app/node_modules
+WORKDIR /app
 RUN npm run build
-# Remove development dependencies to make the next steps faster
-RUN npm prune --production
 
-# Prepare production dependencies in a separate stage to minimize image size
-FROM base as prod-deps
+FROM node:20-alpine
+COPY ./package.json package-lock.json /app/
+COPY --from=production-dependencies-env /app/node_modules /app/node_modules
+COPY --from=build-env /app/build /app/build
 WORKDIR /app
-COPY --from=builder /app/package*.json ./
-# Install only production dependencies
-RUN npm ci --production
-
-# Final stage for the runtime environment
-FROM base as runner
-WORKDIR /app
-
-# Setup a non-root user for security purposes
-RUN addgroup --system --gid 1001 remix && \
-    adduser --system --uid 1001 remix
-USER remix
-
-EXPOSE 3000
-
-# Copy necessary files from previous stages
-COPY --from=prod-deps --chown=remix:remix /app/package*.json ./
-
-COPY --from=prod-deps --chown=remix:remix /app/node_modules ./node_modules
-COPY --from=builder --chown=remix:remix /app/build ./build
-COPY --from=builder --chown=remix:remix /app/public ./public
-COPY --from=builder --chown=remix:remix /app/server.mjs ./server.mjs
-
-
-# Adjust the ENTRYPOINT to run the compiled JavaScript file
-ENTRYPOINT ["npm", "run", "start"]
+CMD ["npm", "run", "start"]
