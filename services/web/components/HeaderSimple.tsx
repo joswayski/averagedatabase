@@ -3,11 +3,9 @@ import { Burger, Container, Group } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 
 const links = [
-  { link: '/about', label: 'Features' },
+  { link: '/docs', label: 'Docs' },
   { link: '/pricing', label: 'Pricing' },
-  { link: '/learn', label: 'Learn' },
-  { link: '/community', label: 'Community' },
-];
+  { link: '/blog', label: 'Blog' }];
 
 export function HeaderSimple() {
   const [opened, { toggle }] = useDisclosure(false);
@@ -29,7 +27,7 @@ export function HeaderSimple() {
   ));
 
   return (
-    <header className="h-14 mb-4 bg-white border-b border-gray-200 w-full">
+    <header className="h-14 mb-4 bg-white border-b border-gray-200 w-full shadow-sm">
       <Container size="lg" className="h-14 flex justify-between items-center">
         <img src="/logo-small.png" alt="AvgDB logo small" className="h-10 w-40 object-contain mr-2" />
         <Group gap={5} visibleFrom="xs">

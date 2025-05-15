@@ -7,7 +7,7 @@ export function HeroBullets() {
       <div className="flex flex-col-reverse items-center justify-center gap-8 md:flex-row md:items-center md:justify-between md:gap-16 py-16">
         <div className="max-w-xl w-full md:mr-12 flex-1">
           <h1 className="text-black font-outfit text-4xl md:text-5xl font-medium leading-tight mb-4">
-            The world's <span className="relative bg-blue-100/70 rounded px-3 py-1">fastest</span>, <span className="relative bg-green-100/70 rounded px-3 py-1">most secure</span>, <span className="relative bg-purple-100/70 rounded px-3 py-1">scalable</span>, <span className="relative bg-orange-100/70 rounded px-3 py-1">reliable</span>, <span className="relative bg-yellow-100/70 rounded px-3 py-1">free-est</span>, <span className="relative bg-pink-100/70 rounded px-3 py-1">open source</span> database platform<br />
+            The world's <span className="relative bg-blue-100/70 rounded px-3 py-1">fastest</span>, <span className="relative bg-green-100/70 rounded px-3 py-1">most secure</span>, <span className="relative bg-purple-100/70 rounded px-3 py-1">scalable</span>, <span className="relative bg-orange-100/70 rounded px-3 py-1">reliable</span>, <span className="relative bg-yellow-100/70 rounded px-3 py-1">free-est</span>, <span className="relative bg-rose-100/70 rounded px-3 py-1">open source</span> database platform<br />
           </h1>
           <Text c="dimmed" mt="md">
             Build fully functional accessible web applications faster than ever – Mantine includes
