@@ -1,15 +1,19 @@
 import { Container, Text, Title } from "@mantine/core";
-import { testimonials } from "../app/data/testimonials"
+import type { Testimonial } from "../app/data/testimonials";
 
-export function Testimonials() {
-  const featured = testimonials.filter(t => t.featured);
-  const regular = testimonials.filter(t => !t.featured);
+type TestimonialsProps = {
+  testimonials: Testimonial[];
+};
+
+export function Testimonials({ testimonials }: TestimonialsProps) {
+  const featured = testimonials?.filter(t => t.featured) ?? [];
+  const regular = testimonials?.filter(t => !t.featured) ?? [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-4">
       <Container size={700} className="py-20 pb-12">
 
-        <Title className="leading-none text-center mt-8" order={2}>
+        <Title className="leading-none text-center mt-8" order={2} size={36}>
           AvgDB is <span className="bg-rose-100 px-1.5 rounded-sm inline-block ">loved</span> by everyone ❤️
         </Title>
 

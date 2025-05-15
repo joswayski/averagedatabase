@@ -1,4 +1,4 @@
-type Testimonial = {
+export type Testimonial = {
   featured: boolean;
   body: string;
   name: string;
@@ -187,7 +187,7 @@ export const testimonials: Testimonial[] = [
   },
   {
     featured: false,
-    body: `fuck it I’m sold`,
+    body: `fuck it I'm sold`,
     name: "James Landrum",
     handle: "JamesRLandrum",
     imageUrl:
