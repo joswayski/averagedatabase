@@ -1,12 +1,12 @@
-import { Welcome } from "../welcome/welcome";
+import { Welcome } from "../welcome/welcome"
 
 export function meta({}) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "Average Database" },
+    { name: "description", content: "The world's fastest, most secure, scalable, reliable, free-est, open source database platform" },
   ];
 }
 
 export default function Home() {
-  return <Welcome />;
+  return <Welcome />
 }

@@ -24,6 +24,7 @@
     "@mantine/tiptap": "^8.0.1",
     "@react-router/node": "^7.5.3",
     "@react-router/serve": "^7.5.3",
+    "@tabler/icons-react": "^3.31.0",
     "@tiptap/extension-link": "^2.12.0",
     "@tiptap/pm": "^2.12.0",
     "@tiptap/react": "^2.12.0",
