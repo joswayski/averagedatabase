@@ -2,6 +2,7 @@ import { BarChart } from '@mantine/charts';
 import { Text, Stack } from '@mantine/core';
 import { backupRestorationData } from '../data';
 import type { BackupRestorationPoint } from '../types';
+import { NoDataAlert } from '../shared/NoDataAlert';
 
 interface BackupRestorationProps {
   enabledDbs: Record<string, boolean>;
@@ -9,6 +10,10 @@ interface BackupRestorationProps {
 
 export function BackupRestoration({ enabledDbs }: BackupRestorationProps) {
   const enabledData = backupRestorationData.filter(db => enabledDbs[db.id]);
+
+  if (enabledData.length === 0) {
+    return <NoDataAlert />;
+  }
   
   // Transform data for the chart
   const chartData = (enabledData[0].data as BackupRestorationPoint[]).map((point, index) => {
@@ -42,8 +47,7 @@ export function BackupRestoration({ enabledDbs }: BackupRestorationProps) {
         }))}
         tickLine="xy"
         gridAxis="xy"
-        withLegend
-        legendProps={{ verticalAlign: 'bottom' }}
+
       />
     </Stack>
   );

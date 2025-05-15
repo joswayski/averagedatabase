@@ -2,6 +2,7 @@ import { AreaChart } from '@mantine/charts';
 import { Text, Stack } from '@mantine/core';
 import { queryLatencyData } from '../data';
 import type { QueryLatencyDataPoint } from '../types';
+import { NoDataAlert } from '../shared/NoDataAlert';
 
 interface QueryLatencyProps {
   enabledDbs: Record<string, boolean>;
@@ -9,6 +10,10 @@ interface QueryLatencyProps {
 
 export function QueryLatency({ enabledDbs }: QueryLatencyProps) {
   const enabledData = queryLatencyData.filter(db => enabledDbs[db.id]);
+
+  if (enabledData.length === 0) {
+    return <NoDataAlert />;
+  }
   
   // Transform data for the chart
   const chartData = enabledData[0].data.map((_: QueryLatencyDataPoint, index: number) => {
@@ -39,11 +44,11 @@ export function QueryLatency({ enabledDbs }: QueryLatencyProps) {
         series={enabledData.map(db => ({
           name: db.name,
           color: db.color,
-          opacity: 0.6
         }))}
         curveType="step"
         tickLine="xy"
         gridAxis="x"
+        withXAxis={false}
         withLegend
         withGradient={true}
         legendProps={{ verticalAlign: 'bottom' }}
