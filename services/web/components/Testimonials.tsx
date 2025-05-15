@@ -10,7 +10,7 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
   const regular = testimonials?.filter(t => !t.featured) ?? [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-4">
+    <div className="max-w-7xl mx-auto px-12 py-4 bg-stone-50 rounded-md">
       <Container size={700} className="py-20 pb-12">
 
         <Title className="leading-none text-center mt-8" order={2} size={36}>
