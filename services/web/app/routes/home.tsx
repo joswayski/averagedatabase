@@ -2,6 +2,7 @@ import { useLoaderData } from "react-router";
 import { HeaderSimple } from "../../components/HeaderSimple";
 import { HeroBullets } from "../../components/HeroBullets";
 import { Testimonials } from "../../components/Testimonials";
+import { Benchmarks } from "../../components/benchmarks/Benchmarks";
 import { testimonials, type Testimonial } from "../data/testimonials";
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -38,6 +39,7 @@ export default function Home() {
       <HeaderSimple />
       <main className="">
         <HeroBullets />
+        <Benchmarks />
         <Testimonials testimonials={testimonials} />
       </main>
     </>
