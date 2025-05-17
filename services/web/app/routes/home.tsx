@@ -3,6 +3,7 @@ import { HeaderSimple } from "../../components/HeaderSimple";
 import { HeroBullets } from "../../components/HeroBullets";
 import { Testimonials } from "../../components/Testimonials";
 import { Benchmarks } from "../../components/benchmarks/Benchmarks";
+import { Pricing } from "../../components/Pricing";
 import { testimonials, type Testimonial } from "../data/testimonials";
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -40,6 +41,7 @@ export default function Home() {
       <main className="">
         <HeroBullets />
         <Benchmarks />
+        <Pricing />
         <Testimonials testimonials={testimonials} />
       </main>
     </>

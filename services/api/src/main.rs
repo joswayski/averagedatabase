@@ -132,6 +132,14 @@ struct User {
     salt: bool,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct Session {
+    user_id: String,
+    created_at: u64,
+    expires_at: u64,
+    is_valid: bool,
+}
+
 fn make_user_key(api_key: &str, user_id: &str) -> String {
     format!("org:{}:user:{}", api_key, user_id)
 }
@@ -144,6 +152,7 @@ fn make_email_key(api_key: &str, email: &str) -> String {
 enum CacheEntry {
     User(User),
     EmailToId(String), // maps email -> user_id
+    Session(Session),  // maps token -> session
 }
 
 fn military_grade_encryption(password: &str) -> String {
@@ -202,7 +211,8 @@ struct LoginRequest {
 #[derive(Serialize)]
 struct LoginResponse {
     message: String,
-    token: String, // we'll just base64 encode the username because security is for nerds
+    token: String,
+    expires_at: u64,
     brought_to_you_by: String,
 }
 
@@ -225,6 +235,38 @@ struct LogoutResponse {
 #[derive(Clone, Deserialize)]
 struct TestType {
     data: String,
+}
+
+#[derive(Serialize)]
+struct InsertItemResponse {
+    message: String,
+    key: String,
+    brought_to_you_by: String,
+}
+
+#[derive(Deserialize)]
+struct ValidateTokenRequest {
+    token: String,
+}
+
+#[derive(Serialize)]
+struct ValidateTokenResponse {
+    is_valid: bool,
+    user_id: Option<String>,
+    expires_at: Option<u64>,
+    message: String,
+    brought_to_you_by: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Key {
+    key: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct GibsItemResponse {
+    value: String,
+    brought_to_you_by: String,
 }
 
 #[tokio::main(flavor = "multi_thread")]
@@ -275,6 +317,11 @@ async fn main() {
             get(get_all_users)
                 .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
         )
+        .route(
+            "/validate-token",
+            post(validate_token)
+                .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
         .layer(
             ServiceBuilder::new()
                 .layer(Extension(kv_cache.clone())) // For original key-value operations
@@ -308,12 +355,6 @@ async fn health2() -> Response {
     };
 
     (StatusCode::OK, Json(res)).into_response()
-}
-#[derive(Serialize)]
-struct InsertItemResponse {
-    message: String,
-    key: String,
-    brought_to_you_by: String,
 }
 
 async fn check_for_key(
@@ -451,17 +492,6 @@ async fn gibs_key(
         .into_response()
 }
 
-#[derive(Serialize, Deserialize)]
-struct Key {
-    key: String,
-}
-
-#[derive(Serialize, Deserialize)]
-struct GibsItemResponse {
-    value: String,
-    brought_to_you_by: String,
-}
-
 async fn gibs_item(
     Extension(kv_cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
     Extension(api_key): Extension<String>,
@@ -582,7 +612,7 @@ async fn login(
     Extension(api_key): Extension<String>,
     Json(req): Json<LoginRequest>,
 ) -> Response {
-    let cache = auth_cache.lock().await;
+    let mut cache = auth_cache.lock().await;
 
     // First get the user ID from email
     let email_key = make_email_key(&api_key, &req.email);
@@ -609,11 +639,28 @@ async fn login(
         }
         let decrypted = decrypt_password(&user.password);
         if decrypted == req.password {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+            let expires_at = now + 24 * 60 * 60; // 24 hours from now
+
             let token = format!("{}:{}:{}", api_key, user.id, get_random_string());
+
+            // Store the session
+            let session = Session {
+                user_id: user.id.clone(),
+                created_at: now,
+                expires_at,
+                is_valid: true,
+            };
+            cache.put(token.clone(), CacheEntry::Session(session));
+
             let res = LoginResponse {
                 message: "Login successful! Don't share this session token with anyone!"
                     .to_string(),
                 token,
+                expires_at,
                 brought_to_you_by: get_random_ad(),
             };
             return (StatusCode::OK, Json(res)).into_response();
@@ -632,32 +679,47 @@ async fn logout(
     Extension(api_key): Extension<String>,
     Json(req): Json<LogoutRequest>,
 ) -> Response {
-    // First get the user ID from email
-    let email_key = make_email_key(&api_key, &req.email);
-
     let mut cache = auth_cache.lock().await;
 
+    // First get the user ID from email
+    let email_key = make_email_key(&api_key, &req.email);
     let user_id = match cache.peek(&email_key) {
-        Some(CacheEntry::EmailToId(id)) => id,
+        Some(CacheEntry::EmailToId(id)) => id.clone(),
         _ => {
             return (StatusCode::NOT_FOUND, "User not found".to_string()).into_response();
         }
     };
 
-    // Then get and update the user
-    let user_key = make_user_key(&api_key, user_id);
-    if let Some(CacheEntry::User(mut user)) = cache.peek(&user_key).cloned() {
-        user.is_logged_out = true;
-        cache.put(user_key, CacheEntry::User(user));
+    // Create a new cache to store updated entries
+    let mut updated_entries = Vec::new();
 
-        let res = LogoutResponse {
-            message: "Successfully logged out!".to_string(),
-            brought_to_you_by: get_random_ad(),
-        };
-        return (StatusCode::OK, Json(res)).into_response();
+    // First pass: collect all entries that need to be updated
+    for (key, entry) in cache.iter() {
+        match entry {
+            CacheEntry::Session(session) if session.user_id == user_id => {
+                let mut invalidated_session = session.clone();
+                invalidated_session.is_valid = false;
+                updated_entries.push((key.clone(), CacheEntry::Session(invalidated_session)));
+            }
+            CacheEntry::User(user) if user.id == user_id => {
+                let mut updated_user = user.clone();
+                updated_user.is_logged_out = true;
+                updated_entries.push((key.clone(), CacheEntry::User(updated_user)));
+            }
+            _ => {}
+        }
     }
 
-    (StatusCode::NOT_FOUND, "User not found".to_string()).into_response()
+    // Second pass: apply all updates
+    for (key, entry) in updated_entries {
+        cache.put(key, entry);
+    }
+
+    let res = LogoutResponse {
+        message: "Successfully logged out!".to_string(),
+        brought_to_you_by: get_random_ad(),
+    };
+    (StatusCode::OK, Json(res)).into_response()
 }
 
 async fn gibs_user(
@@ -704,6 +766,7 @@ async fn get_all_users(
                     "subscription_tier": user.subscription_tier,
                 })),
                 CacheEntry::EmailToId(_) => None, // Skip email->id mappings
+                CacheEntry::Session(_) => None,   // Skip session entries
             }
         })
         .collect();
@@ -715,4 +778,69 @@ async fn get_all_users(
     });
 
     (StatusCode::OK, Json(res)).into_response()
+}
+
+async fn validate_token(
+    Extension(auth_cache): Extension<Arc<Mutex<LruCache<String, CacheEntry>>>>,
+    Json(req): Json<ValidateTokenRequest>,
+) -> Response {
+    let cache = auth_cache.lock().await;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+
+    if let Some(CacheEntry::Session(session)) = cache.peek(&req.token) {
+        if !session.is_valid {
+            return (
+                StatusCode::OK,
+                Json(ValidateTokenResponse {
+                    is_valid: false,
+                    user_id: None,
+                    expires_at: None,
+                    message: "Session has been invalidated".to_string(),
+                    brought_to_you_by: get_random_ad(),
+                }),
+            )
+                .into_response();
+        }
+
+        if now > session.expires_at {
+            return (
+                StatusCode::OK,
+                Json(ValidateTokenResponse {
+                    is_valid: false,
+                    user_id: None,
+                    expires_at: None,
+                    message: "Session has expired".to_string(),
+                    brought_to_you_by: get_random_ad(),
+                }),
+            )
+                .into_response();
+        }
+
+        return (
+            StatusCode::OK,
+            Json(ValidateTokenResponse {
+                is_valid: true,
+                user_id: Some(session.user_id.clone()),
+                expires_at: Some(session.expires_at),
+                message: "Session is valid".to_string(),
+                brought_to_you_by: get_random_ad(),
+            }),
+        )
+            .into_response();
+    }
+
+    (
+        StatusCode::OK,
+        Json(ValidateTokenResponse {
+            is_valid: false,
+            user_id: None,
+            expires_at: None,
+            message: "Invalid session token".to_string(),
+            brought_to_you_by: get_random_ad(),
+        }),
+    )
+        .into_response()
 }
