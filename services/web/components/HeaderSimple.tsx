@@ -28,7 +28,7 @@ export function HeaderSimple() {
   ));
 
   return (
-    <header className="h-14 mb-4 bg-white border-b border-gray-200 w-full shadow-sm">
+    <header className="h-14 mb-4 bg-stone-50 border-b border-gray-200 w-full shadow-sm">
       <Container size="lg" className="h-14 flex justify-between items-center">
         <img src="/logo-small.png" alt="AvgDB logo small" className="h-10 w-40 object-contain mr-2" />
         <Group gap={5} visibleFrom="xs">

@@ -4,7 +4,8 @@ import { HeroBullets } from "../../components/HeroBullets";
 import { Testimonials } from "../../components/Testimonials";
 import { Benchmarks } from "../../components/benchmarks/Benchmarks";
 import { Pricing } from "../../components/Pricing";
-import { testimonials, type Testimonial } from "../data/testimonials";
+import { testimonials } from "../data/testimonials";
+import { Footer } from "components/Footer";
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -43,6 +44,7 @@ export default function Home() {
         <Benchmarks />
         <Pricing />
         <Testimonials testimonials={testimonials} />
+        <Footer/>
       </main>
     </>
   );

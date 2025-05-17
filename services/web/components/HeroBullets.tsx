@@ -26,13 +26,13 @@ const factsheet = [
 export function HeroBullets() {
   return (
     <Container size="lg">
-      <div className="flex flex-col-reverse items-center justify-center gap-8 md:flex-row md:items-center md:justify-between md:gap-16 py-16">
-        <div className="max-w-xl w-full md:mr-12 flex-1">
+      <div className="flex flex-col-reverse items-center justify-center gap-8 md:flex-row md:items-center md:justify-between md:gap-15 py-16">
+        <div className="max-w-6xl w-full md:mr-12 flex-1 ">
           <h1 className="text-black font-outfit text-4xl md:text-5xl font-medium leading-tight mb-4">
-            The world's most <span className="relative bg-blue-100/70 rounded px-3 py-1">performant</span>, <span className="relative bg-green-100/70 rounded px-3 py-1">secure</span>, <span className="relative bg-purple-100/70 rounded px-3 py-1">scalable</span>, <span className="relative bg-orange-100/70 rounded px-3 py-1">reliable</span>, <span className="relative bg-yellow-100/70 rounded px-3 py-1">free-est</span>, <span className="relative bg-rose-100/70 rounded px-3 py-1"> open source</span> data platform<br />
+            The world's most <span className="relative bg-blue-100/70 rounded px-3 py-1">performant</span>, <span className="relative bg-green-100/70 rounded px-3 py-1">secure</span>, <span className="relative bg-purple-100/70 rounded px-3 py-1">scalable</span>, <span className="relative bg-orange-100/70 rounded px-3 py-1">reliable</span>, <span className="relative bg-yellow-100/70 rounded px-3 py-1">freest</span>, <span className="relative bg-rose-100/70 rounded px-3 py-1"> open source</span> data platform<br />
           </h1>
           <Text c="dimmed" mt="md">
-            Built from the ground up to meet the needs of the average developer, AvgDB is the only database startup that will never let you down. Never give you up.
+            AvgDB is the only database built from the ground up to meet the needs of the average developer.
           </Text>
 
           <List
@@ -71,7 +71,7 @@ export function HeroBullets() {
             </Button>
           </Group>
         </div>
-        <img src="/logo.png" alt="AvgDB logo" className="w-64 h-64 md:w-[28rem] md:h-[28rem] max-w-full object-contain flex-1 mb-8 md:mb-0 hidden md:block" />
+        <img src="/logo.png" alt="AvgDB logo" className="w-24 h-24 md:w-[22rem] md:h-[22rem] max-w-lg object-contain flex-1 mb-8 md:mb-0 hidden md:block" />
       </div>
     </Container>
   );
