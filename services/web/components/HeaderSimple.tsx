@@ -48,9 +48,6 @@ export function HeaderSimple() {
               setActiveHash(link.link);
             }
           }
-          // For desktop, toggle() is not needed unless the menu is also opened by these links
-          // If desktop links should close a potentially open mobile menu, keep toggle().
-          // For now, assuming desktop links don't interact with the mobile menu's opened state.
         }}
         className={({ isActive }) => {
           const currentLinkIsActive = isHashLink
