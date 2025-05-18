@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router";
+import { Outlet, useLoaderData } from "react-router";
 import { HeaderSimple } from "../../components/HeaderSimple";
 import { HeroBullets } from "../../components/HeroBullets";
 import { Testimonials } from "../../components/Testimonials";
@@ -38,15 +38,8 @@ export default function Home() {
 
   return (
     <>
-
-      <main className="">
-        <HeaderSimple />
-        <HeroBullets />
-        <Benchmarks />
-        <Testimonials testimonials={testimonials} />
-        <Pricing />
-        <Footer/>
-      </main>
+      <HeaderSimple />
+<Outlet/>
     </>
   );
 }

@@ -63,13 +63,10 @@ export const action = async ({ request }: { request: Request }) => {
   const { _action, ...values } = Object.fromEntries(body);
 
   try {
-    // Random number between 200 and 2000
-    const random = Math.floor(Math.random() * 1800) + 200;
 
-    await new Promise((resolve) => setTimeout(resolve, random));
     const key = await axios.post(
       `${
-        process.env.BASE_API_URL || "https://api.averagedatabase.com"
+        process.env.BASE_API_URL || "http://localhost:8080"
       }/gibs-key`,
       {}
     );
