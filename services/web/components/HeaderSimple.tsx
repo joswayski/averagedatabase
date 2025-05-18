@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Burger, Container, Group, Box, Overlay, ActionIcon } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { Link, useNavigate, useLocation, useNavigation } from 'react-router';
+import { NavLink, useLocation, useNavigation } from 'react-router';
 import { IconX } from '@tabler/icons-react';
 
 const links = [
@@ -13,86 +13,78 @@ const links = [
 
 export function HeaderSimple() {
   const [opened, { toggle }] = useDisclosure(false);
-  const [active, setActive] = useState('');
-  const navigate = useNavigate();
+  const [activeHash, setActiveHash] = useState<string | null>(null);
   const location = useLocation();
   const navigation = useNavigation();
   const previousNavigation = useRef(navigation);
 
-  // Update active state when location changes
+  // Update active hash when location changes
   useEffect(() => {
-    if (location.pathname === '/docs') {
-      setActive('/docs');
-    } else if (location.pathname === '/blog' || location.pathname.startsWith('/blog/')) {
-      setActive('/blog');
-    } else if (location.pathname === '/') {
-      if (location.hash) {
-        setActive(location.hash);
-      } else {
-        // If on home page with no hash, and not coming from a 'loaderSubmission' (form post)
-        // that might clear the hash, keep it blank.
-        // Or, if it was a navigation to just "/", clear active.
-        if (navigation.state === 'idle' && previousNavigation.current?.state !== 'loading') {
-            setActive('');
-        }
-      }
+    if (location.hash) {
+      setActiveHash(location.hash);
+    } else if (location.pathname === '/' && !location.hash) {
+      setActiveHash(null);
     }
     previousNavigation.current = navigation;
   }, [location, navigation]);
 
-  const handleSectionClick = (section: string) => {
-    // If the link is for a section on the current page (starts with #)
-    if (section.startsWith('#')) {
-      if (location.pathname === '/') {
-        // We are on the home page, navigate to the hash
-        navigate(section, { replace: true, preventScrollReset: true });
-        setActive(section); // Set active state immediately
-      } else {
-        // We are on another page (e.g. /docs), navigate to home page with hash
-        navigate(`/${section}`);
-        // Active state will be updated by useEffect once navigation completes
-      }
-    } else {
-      // It's a full path link (e.g., /docs)
-      setActive(section);
-      navigate(section);
-    }
-  };
+  const items = links.map((link) => {
+    const isHashLink = link.link.startsWith('#');
+    const to = isHashLink 
+      ? (location.pathname === '/' ? link.link : `/${link.link}`)
+      : link.link;
 
-  const items = links.map((link) => (
-    link.link.startsWith('#') ? (
-      <button
+    return (
+      <NavLink
         key={link.label}
-        onClick={() => {
-          handleSectionClick(link.link);
-          toggle(); // Close menu after clicking
+        to={to}
+        onClick={(e) => {
+          if (isHashLink && location.pathname === '/') {
+            e.preventDefault();
+            // For hash links on home page, use smooth scroll
+            const element = document.querySelector(link.link);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth' });
+              setActiveHash(link.link);
+            }
+          }
+          toggle();
         }}
-        className={`block leading-none px-3 py-2 rounded-md no-underline text-gray-700 text-sm font-medium transition-colors cursor-pointer ${active === link.link ? 'bg-blue-600 text-white' : 'hover:bg-stone-200'}`}
-        data-active={active === link.link || undefined}
+        className={({ isActive }) => {
+          // For hash links, only show active when explicitly clicked
+          if (isHashLink) {
+            return `block leading-none px-3 py-2 rounded-md no-underline text-sm font-medium transition-colors cursor-pointer ${
+              activeHash === link.link
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-700 hover:bg-stone-200'
+            }`;
+          }
+          // For regular links, use NavLink's isActive
+          return `block leading-none px-3 py-2 rounded-md no-underline text-sm font-medium transition-colors cursor-pointer ${
+            isActive
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-700 hover:bg-stone-200'
+          }`;
+        }}
+        end={!isHashLink} // Only use 'end' for non-hash links
       >
         {link.label}
-      </button>
-    ) : (
-      <Link
-        key={link.label}
-        to={link.link}
-        onClick={() => {
-          setActive(link.link);
-          toggle(); // Close menu after clicking
-        }}
-        className={`block leading-none px-3 py-2 rounded-md no-underline text-gray-700 text-sm font-medium transition-colors cursor-pointer ${active === link.link ? 'bg-blue-600 text-white' : 'hover:bg-stone-200'}`}
-      >
-        {link.label}
-      </Link>
-    )
-  ));
+      </NavLink>
+    );
+  });
 
   return (
-    <header className="sticky top-0 z-50 h-14  bg-stone-50 border-b border-gray-200 w-full shadow-sm">
+    <header className="sticky top-0 z-50 h-14 bg-stone-50 border-b border-gray-200 w-full shadow-sm">
       <Container size="lg" className="h-14 flex justify-between items-center">
-        <Link to="/" className="flex items-center cursor-pointer" onClick={() => setActive('')}>
+        <NavLink 
+          to="/" 
+          className={({ isActive }) => 
+            `flex items-center cursor-pointer ${isActive ? 'opacity-80' : ''}`
+          }
+          end
+        >
           <img src="/logo-small.png" alt="AvgDB logo small" className="h-10 w-40 object-contain mr-2" />
-        </Link>
+        </NavLink>
         <Group gap={5} visibleFrom="xs">
           {items}
         </Group>
