@@ -8,7 +8,40 @@ interface QueryLatencyProps {
   enabledDbs: Record<string, boolean>;
 }
 
-export function QueryLatency({ enabledDbs }: QueryLatencyProps) {
+export const data = [
+  {
+    date: 'Mar 22',
+    Apples: 2890,
+    Oranges: 2338,
+    Tomatoes: 2452,
+  },
+  {
+    date: 'Mar 23',
+    Apples: 2756,
+    Oranges: 2103,
+    Tomatoes: 2402,
+  },
+  {
+    date: 'Mar 24',
+    Apples: 3322,
+    Oranges: 986,
+    Tomatoes: 1821,
+  },
+  {
+    date: 'Mar 25',
+    Apples: 3470,
+    Oranges: 2108,
+    Tomatoes: 2809,
+  },
+  {
+    date: 'Mar 26',
+    Apples: 3129,
+    Oranges: 1726,
+    Tomatoes: 2290,
+  },
+];
+
+export default function QueryLatency({ enabledDbs }: QueryLatencyProps) {
   const enabledData = queryLatencyData.filter(db => enabledDbs[db.id]);
 
   if (enabledData.length === 0) {
@@ -30,11 +63,11 @@ export function QueryLatency({ enabledDbs }: QueryLatencyProps) {
 
   return (
     <Stack>
-      <Text size="xl" fw={600} ta="center" className="mb-2">
+      <Text size="xl" fw={600} ta="center" className="mb-10">
         Query Latency Comparison
       </Text>
       <Text size="sm" c="dimmed" ta="center" className="mb-6">
-        Average query response time in milliseconds (lower is better)
+        Average query response time in milliseconds (lower is better). Results are recalculated on every page refresh. 
       </Text>
 
       <AreaChart
@@ -45,13 +78,17 @@ export function QueryLatency({ enabledDbs }: QueryLatencyProps) {
           name: db.name,
           color: db.color,
         }))}
+    
         curveType="step"
         tickLine="xy"
         gridAxis="x"
         withXAxis={false}
-        withLegend
         withGradient={true}
-        legendProps={{ verticalAlign: 'bottom' }}
+        withTooltip={true}
+        valueFormatter={(value) => value.toFixed(2)}
+        tooltipProps={{
+          formatter: (value: number) => value.toFixed(2),
+        }}
       />
     </Stack>
   );

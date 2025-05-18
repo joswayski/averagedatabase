@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, Group, Switch, Text, Stack, Center, SegmentedControl } from '@mantine/core';
 import { IconClock, IconDatabase } from '@tabler/icons-react';
-import { QueryLatency } from './query-latency/QueryLatency';
+import QueryLatency from './query-latency/QueryLatency';
 import { BackupRestoration } from './backup-restoration/BackupRestoration';
 import { databases } from './data';
 
@@ -80,9 +80,10 @@ export function Benchmarks() {
                 onChange={() => toggleDatabase(db.id)}
                 label={db.name}
                 labelPosition="left"
-                className="mx-2"
+                className="mx-2 cursor-pointer z-5000"
                 color={db.color}
                 styles={{
+                  root: { cursor: 'pointer' }, 
                   track: {
                     backgroundColor: enabledDbs[db.id] ? getColorVar(db.color) : undefined,
                     borderColor: enabledDbs[db.id] ? getColorVar(db.color) : undefined,

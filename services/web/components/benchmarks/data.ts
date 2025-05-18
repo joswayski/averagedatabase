@@ -21,12 +21,16 @@ const generateDataPoints = (
     "Dec",
   ];
   return dates.map((month) => {
-    const randomVariance = (Math.random() - 0.5) * variance;
+    // Increase spread for non-AvgDB, keep AvgDB fastest
+    const extraSpread = isAvgDB ? 0 : Math.random() * 15 + 5; // 5-20ms extra for non-AvgDB
+    const randomVariance = (Math.random() - 0.5) * variance * (isAvgDB ? 1 : 2); // double variance for non-AvgDB
+    let value = isAvgDB
+      ? baseValue * 0.7 + randomVariance
+      : baseValue + randomVariance + extraSpread;
+    value = Math.round(value * 100) / 100; // Two decimals
     return {
       date: `${month} 23`,
-      value: isAvgDB
-        ? baseValue * 0.7 + randomVariance // AvgDB is consistently better
-        : baseValue + randomVariance, // Other DBs have higher latency
+      value,
     };
   });
 };
@@ -46,7 +50,7 @@ export const databases: Database[] = [
   },
   {
     id: "aurora",
-    name: "Aurora",
+    name: "AWS Aurora",
     color: "blue.6",
     description: "AWS's cloud-native database",
   },
@@ -73,12 +77,6 @@ export const databases: Database[] = [
     name: "CockroachDB",
     color: "red.6",
     description: "Distributed SQL database",
-  },
-  {
-    id: "mongodb",
-    name: "MongoDB",
-    color: "green.8",
-    description: "Popular NoSQL database",
   },
 ];
 
