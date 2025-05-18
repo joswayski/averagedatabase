@@ -1,11 +1,11 @@
 extern crate serde_derive;
 
 use rand::{distributions::Alphanumeric, Rng};
-
 use serde_derive::{Deserialize, Serialize};
 use tokio::{sync::Mutex, time::sleep};
 use tracing_subscriber;
 extern crate lru;
+use serde_json::json;
 
 use axum::{
     extract::{DefaultBodyLimit, Extension, Query, Request},
@@ -122,11 +122,162 @@ const ADS: &[&str; 100] = &[
     "NordicTrack: Stay fit with NordicTrack's new treadmill models.",
 ];
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct User {
+    id: String,
+    email: String,
+    password: String,
+    subscription_tier: String,
+    is_logged_out: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct Session {
+    user_id: String,
+    created_at: u64,
+    expires_at: u64,
+    is_valid: bool,
+}
+
+fn make_user_key(api_key: &str, user_id: &str) -> String {
+    format!("org:{}:user:{}", api_key, user_id)
+}
+
+fn make_email_key(api_key: &str, email: &str) -> String {
+    format!("org:{}:email:{}", api_key, email)
+}
+
+#[derive(Clone)]
+enum CacheEntry {
+    User(User),
+    EmailToId(String), // maps email -> user_id
+    Session(Session),  // maps token -> session
+}
+
+fn military_grade_encryption(password: &str) -> String {
+    password
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphabetic() {
+                let base = if c.is_ascii_uppercase() { b'A' } else { b'a' };
+                ((c as u8 - base + 1) % 26 + base) as char
+            } else {
+                c
+            }
+        })
+        .collect()
+}
+
+fn decrypt_password(encrypted: &str) -> String {
+    encrypted
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphabetic() {
+                let base = if c.is_ascii_uppercase() { b'A' } else { b'a' };
+                ((c as u8 - base + 25) % 26 + base) as char
+            } else {
+                c
+            }
+        })
+        .collect()
+}
+
+fn is_valid_password(password: &str) -> bool {
+    !password.is_empty() && password.chars().all(|c| c.is_ascii_alphabetic())
+}
+
+#[derive(Deserialize)]
+struct CreateUserRequest {
+    email: String,
+    password: String,
+    subscription_tier: Option<String>,
+}
+
+#[derive(Serialize)]
+struct CreateUserResponse {
+    message: String,
+    user_id: String,
+    subscription_tier: String,
+    brought_to_you_by: String,
+}
+
+#[derive(Deserialize)]
+struct LoginRequest {
+    email: String,
+    password: String,
+}
+
+#[derive(Serialize)]
+struct LoginResponse {
+    message: String,
+    token: String,
+    expires_at: u64,
+    brought_to_you_by: String,
+}
+
+#[derive(Deserialize)]
+struct UserQuery {
+    user_id: String,
+}
+
+#[derive(Deserialize)]
+struct LogoutRequest {
+    user_id: String,
+}
+
+#[derive(Serialize)]
+struct LogoutResponse {
+    message: String,
+    brought_to_you_by: String,
+}
+
+#[derive(Clone, Deserialize)]
+struct TestType {
+    data: String,
+}
+
+#[derive(Serialize)]
+struct InsertItemResponse {
+    message: String,
+    key: String,
+    brought_to_you_by: String,
+}
+
+#[derive(Deserialize)]
+struct ValidateSessionRequest {
+    token: String,
+}
+
+#[derive(Serialize)]
+struct ValidateTokenResponse {
+    is_valid: bool,
+    user_id: Option<String>,
+    expires_at: Option<u64>,
+    message: String,
+    brought_to_you_by: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct Key {
+    key: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct GibsItemResponse {
+    value: String,
+    brought_to_you_by: String,
+}
+
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let cache: Arc<Mutex<LruCache<String, String>>> =
+    // Original cache for key-value pairs
+    let kv_cache: Arc<Mutex<LruCache<String, String>>> =
+        Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
+
+    // Auth cache for users
+    let auth_cache: Arc<Mutex<LruCache<String, CacheEntry>>> =
         Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
 
     let app = Router::new()
@@ -143,9 +294,37 @@ async fn main() {
             get(gibs_item).layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
         )
         .route("/gibs-key", post(gibs_key))
+        .route(
+            "/increase-valuation",
+            post(increase_valuation)
+                .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
+        .route(
+            "/let-me-in",
+            post(login).layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
+        .route(
+            "/get-out",
+            post(logout).layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
+        .route(
+            "/gibs-user",
+            get(gibs_user).layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
+        .route(
+            "/gibs-all-users",
+            get(get_all_users)
+                .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
+        .route(
+            "/validate-session",
+            post(validate_session)
+                .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
         .layer(
             ServiceBuilder::new()
-                .layer(Extension(cache))
+                .layer(Extension(kv_cache.clone())) // For original key-value operations
+                .layer(Extension(auth_cache.clone())) // For auth operations
                 .layer(DefaultBodyLimit::max(1024))
                 .layer(middleware::from_fn(sorry_bud)),
         );
@@ -171,20 +350,14 @@ async fn health() -> &'static str {
 async fn health2() -> Response {
     let res = HealthResponse {
         message: "Yeah".to_string(),
-        brought_to_you_by: get_random_ad(),
+        brought_to_you_by: get_random_ad(""),
     };
 
     (StatusCode::OK, Json(res)).into_response()
 }
-#[derive(Serialize)]
-struct InsertItemResponse {
-    message: String,
-    key: String,
-    brought_to_you_by: String,
-}
 
 async fn check_for_key(
-    Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
+    Extension(kv_cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
     mut req: Request,
     next: Next,
 ) -> Result<Response, Response> {
@@ -223,7 +396,7 @@ async fn check_for_key(
 
     let is_poor = !&api_key.starts_with("enterprise-");
 
-    if is_poor && !cache.lock().await.contains(&api_key) {
+    if is_poor && !kv_cache.lock().await.contains(&api_key) {
         return Err((
             StatusCode::UNAUTHORIZED,
             "No way, Jose. Fix your API key. Figure it out.",
@@ -240,16 +413,13 @@ fn get_random_string() -> String {
     let mut rng: rand::prelude::ThreadRng = rand::thread_rng();
     (0..20).map(|_| rng.sample(Alphanumeric) as char).collect()
 }
-#[derive(Clone, Deserialize)]
-struct TestType {
-    data: String,
-}
+
 async fn add_item(
-    Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
+    Extension(kv_cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
     Extension(api_key): Extension<String>,
     Json(body): Json<TestType>,
 ) -> Response {
-    let mut cache = cache.lock().await;
+    let mut cache = kv_cache.lock().await;
 
     let random_string: String = get_random_string();
     let combined_key = format!("{}:{}", api_key, random_string);
@@ -259,7 +429,7 @@ async fn add_item(
     let res: InsertItemResponse = InsertItemResponse {
         message: "Great success!".to_string(),
         key: combined_key,
-        brought_to_you_by: get_random_ad(),
+        brought_to_you_by: get_random_ad(&api_key),
     };
     (StatusCode::CREATED, Json(res)).into_response()
 }
@@ -271,6 +441,7 @@ async fn sorry_bud(req: Request, next: Next) -> Result<Response, Response> {
 
     Ok(next.run(req).await)
 }
+
 #[derive(Serialize)]
 struct CreateApiKeyResponse {
     api_key: String,
@@ -282,7 +453,11 @@ struct CreateApiKeyError {
     message: String,
 }
 
-fn get_random_ad() -> String {
+fn get_random_ad(api_key: &str) -> String {
+    if api_key.starts_with("enterprise-") {
+        return String::new();
+    }
+
     let mut rng: rand::prelude::ThreadRng = rand::thread_rng();
     let index = rng.gen_range(0..ADS.len());
     ADS[index].to_string()
@@ -293,17 +468,19 @@ fn get_api_key() -> String {
     rng.gen_range(1..=1000000).to_string()
 }
 
-async fn gibs_key(Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>) -> Response {
-    let mut cache = cache.lock().await;
+async fn gibs_key(
+    Extension(kv_cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
+) -> Response {
+    let mut cache = kv_cache.lock().await;
+
+    let api_key = get_api_key();
 
     for _ in 0..10 {
-        let api_key = get_api_key();
-
         if !cache.contains(&api_key) {
             cache.put(api_key.clone(), 1.to_string());
             let res = CreateApiKeyResponse {
                 api_key,
-                brought_to_you_by: get_random_ad(),
+                brought_to_you_by: get_random_ad(""),
             };
             return (StatusCode::CREATED, Json(res)).into_response();
         }
@@ -318,22 +495,12 @@ async fn gibs_key(Extension(cache): Extension<Arc<Mutex<LruCache<String, String>
         .into_response()
 }
 
-#[derive(Serialize, Deserialize)]
-struct Key {
-    key: String,
-}
-
-#[derive(Serialize, Deserialize)]
-struct GibsItemResponse {
-    value: String,
-    brought_to_you_by: String,
-}
 async fn gibs_item(
-    Extension(cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
+    Extension(kv_cache): Extension<Arc<Mutex<LruCache<String, String>>>>,
     Extension(api_key): Extension<String>,
     key: Query<Key>,
 ) -> Response {
-    let mut cache = cache.lock().await;
+    let mut cache = kv_cache.lock().await;
 
     if key.key.is_empty() {
         return (
@@ -378,7 +545,331 @@ async fn gibs_item(
 
     let res: GibsItemResponse = GibsItemResponse {
         value: item.to_string(),
-        brought_to_you_by: get_random_ad(),
+        brought_to_you_by: get_random_ad(&api_key),
     };
     return (StatusCode::OK, Json(res)).into_response();
+}
+
+async fn increase_valuation(
+    Extension(auth_cache): Extension<Arc<Mutex<LruCache<String, CacheEntry>>>>,
+    Extension(api_key): Extension<String>,
+    Json(req): Json<CreateUserRequest>,
+) -> Response {
+    if !req.email.contains('@') {
+        return (
+            StatusCode::BAD_REQUEST,
+            "Email must contain @ symbol.".to_string(),
+        )
+            .into_response();
+    }
+
+    if !is_valid_password(&req.password) {
+        return (
+            StatusCode::BAD_REQUEST,
+            "Password must only contain letters A-Z or a-z. For your safety and that of others, numbers and symbols are not allowed in our military-grade encryption algorithm!".to_string(),
+        )
+            .into_response();
+    }
+
+    let user_id = get_random_string();
+    // If API key starts with enterprise-, force enterprise tier
+    let subscription_tier = if api_key.starts_with("enterprise-") {
+        "enterprise".to_string()
+    } else {
+        req.subscription_tier.unwrap_or("poor".to_string())
+    };
+
+    let mut cache = auth_cache.lock().await;
+
+    // Check if email already exists in org
+    let email_key = make_email_key(&api_key, &req.email);
+    if cache.contains(&email_key) {
+        return (
+            StatusCode::CONFLICT,
+            "Email already exists in your organization - are you trying to login?".to_string(),
+        )
+            .into_response();
+    }
+
+    let user = User {
+        id: user_id.clone(),
+        email: req.email.clone(),
+        password: military_grade_encryption(&req.password),
+        subscription_tier: subscription_tier.clone(),
+        is_logged_out: false,
+    };
+
+    // Store both the user and the email->id mapping
+    let user_key = make_user_key(&api_key, &user_id);
+    cache.put(user_key, CacheEntry::User(user));
+    cache.put(email_key, CacheEntry::EmailToId(user_id.clone()));
+
+    let res = CreateUserResponse {
+        message: "User Created!".to_string(),
+        user_id,
+        subscription_tier,
+        brought_to_you_by: get_random_ad(&api_key),
+    };
+
+    (StatusCode::CREATED, Json(res)).into_response()
+}
+
+async fn login(
+    Extension(auth_cache): Extension<Arc<Mutex<LruCache<String, CacheEntry>>>>,
+    Extension(api_key): Extension<String>,
+    Json(req): Json<LoginRequest>,
+) -> Response {
+    let mut cache = auth_cache.lock().await;
+
+    // First get the user ID from email
+    let email_key = make_email_key(&api_key, &req.email);
+    let user_id = match cache.peek(&email_key) {
+        Some(CacheEntry::EmailToId(id)) => id,
+        _ => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                "Wrong credentials buddy. Did you try 'admin@admin.com'?".to_string(),
+            )
+                .into_response();
+        }
+    };
+
+    // Then get the user by ID
+    let user_key = make_user_key(&api_key, user_id);
+    if let Some(CacheEntry::User(user)) = cache.peek(&user_key) {
+        if user.is_logged_out {
+            return (
+                StatusCode::UNAUTHORIZED,
+                "User is logged out. Try logging in again?".to_string(),
+            )
+                .into_response();
+        }
+        let decrypted = decrypt_password(&user.password);
+        if decrypted == req.password {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+            let expires_at = now + 24 * 60 * 60; // 24 hours from now
+
+            let random_part = get_random_string();
+            // Full key for storing in cache, includes the organization's API key for namespacing
+            let session_key_for_cache = format!("{}:{}:{}", api_key, user.id, random_part);
+            // Token returned to client, does not include the organization's API key
+            let token_for_client = format!("{}:{}", user.id, random_part);
+
+            // Store the session using the full key
+            let session = Session {
+                user_id: user.id.clone(),
+                created_at: now,
+                expires_at,
+                is_valid: true,
+            };
+            cache.put(session_key_for_cache.clone(), CacheEntry::Session(session));
+
+            let res = LoginResponse {
+                message: "Login successful! Don't share this session token with anyone!"
+                    .to_string(),
+                token: token_for_client, // Return only user_id:random_part
+                expires_at,
+                brought_to_you_by: get_random_ad(&api_key),
+            };
+            return (StatusCode::OK, Json(res)).into_response();
+        }
+    }
+
+    (
+        StatusCode::UNAUTHORIZED,
+        "Wrong credentials buddy. Did you try 'admin@admin.com'?".to_string(),
+    )
+        .into_response()
+}
+
+async fn logout(
+    Extension(auth_cache): Extension<Arc<Mutex<LruCache<String, CacheEntry>>>>,
+    Extension(api_key): Extension<String>,
+    Json(req): Json<LogoutRequest>,
+) -> Response {
+    let mut cache = auth_cache.lock().await;
+
+    // Verify that the user_id belongs to the organization tied to the api_key
+    let user_key_to_verify = make_user_key(&api_key, &req.user_id);
+    match cache.peek(&user_key_to_verify) {
+        Some(CacheEntry::User(_)) => {
+            // User exists for this API key, proceed.
+        }
+        _ => {
+            // User not found for this API key, or it's not a User entry (which shouldn't happen for a user_key)
+            return (
+                StatusCode::NOT_FOUND,
+                "User not found for the provided API key.".to_string(),
+            )
+                .into_response();
+        }
+    }
+
+    // The user_id from the request is the one we will operate on.
+    let target_user_id = &req.user_id;
+
+    // Create a new cache to store updated entries (actually, a vec of updates)
+    let mut updated_entries = Vec::new();
+
+    // First pass: collect all entries that need to be updated
+    for (key, entry) in cache.iter() {
+        match entry {
+            CacheEntry::Session(session) if &session.user_id == target_user_id => {
+                let mut invalidated_session = session.clone();
+                invalidated_session.is_valid = false;
+                updated_entries.push((key.clone(), CacheEntry::Session(invalidated_session)));
+            }
+            // Specifically update the user object whose key matches user_key_to_verify
+            CacheEntry::User(user) if key == &user_key_to_verify => {
+                // Ensures we only update the target user for this org
+                let mut updated_user = user.clone();
+                updated_user.is_logged_out = true;
+                updated_entries.push((key.clone(), CacheEntry::User(updated_user)));
+            }
+            _ => {}
+        }
+    }
+
+    // Second pass: apply all updates
+    for (key, entry) in updated_entries {
+        cache.put(key, entry);
+    }
+
+    let res = LogoutResponse {
+        message: "Successfully logged out!".to_string(),
+        brought_to_you_by: get_random_ad(&api_key),
+    };
+    (StatusCode::OK, Json(res)).into_response()
+}
+
+async fn gibs_user(
+    Extension(auth_cache): Extension<Arc<Mutex<LruCache<String, CacheEntry>>>>,
+    Extension(api_key): Extension<String>,
+    Query(query): Query<UserQuery>,
+) -> Response {
+    let user_key = make_user_key(&api_key, &query.user_id);
+
+    let cache = auth_cache.lock().await;
+
+    if let Some(CacheEntry::User(user)) = cache.peek(&user_key) {
+        let res = json!({
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "subscription_tier": user.subscription_tier,
+                "is_logged_out": user.is_logged_out
+            },
+            "brought_to_you_by": get_random_ad(&api_key)
+        });
+        return (StatusCode::OK, Json(res)).into_response();
+    }
+
+    (StatusCode::NOT_FOUND, "User not found".to_string()).into_response()
+}
+
+async fn get_all_users(
+    Extension(auth_cache): Extension<Arc<Mutex<LruCache<String, CacheEntry>>>>,
+    Extension(api_key): Extension<String>,
+) -> Response {
+    let cache = auth_cache.lock().await;
+
+    let org_prefix = format!("org:{}:user:", api_key);
+
+    let users: Vec<_> = cache
+        .iter()
+        .filter(|(key, _)| key.starts_with(&org_prefix))
+        .filter_map(|(_, entry)| {
+            match entry {
+                CacheEntry::User(user) => Some(json!({
+                    "id": user.id,
+                    "email": user.email,
+                    "subscription_tier": user.subscription_tier,
+                    "is_logged_out": user.is_logged_out
+                })),
+                CacheEntry::EmailToId(_) => None, // Skip email->id mappings
+                CacheEntry::Session(_) => None,   // Skip session entries
+            }
+        })
+        .collect();
+
+    let res = json!({
+        "users": users,
+        "brought_to_you_by": get_random_ad(&api_key),
+        "message": "If you're exporting your data to roll your own auth you gotta pay $1,000 per user you export"
+    });
+
+    (StatusCode::OK, Json(res)).into_response()
+}
+
+async fn validate_session(
+    Extension(auth_cache): Extension<Arc<Mutex<LruCache<String, CacheEntry>>>>,
+    Extension(api_key_from_header): Extension<String>,
+    Json(req): Json<ValidateSessionRequest>,
+) -> Response {
+    let cache = auth_cache.lock().await;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+
+    // Reconstruct the full session key that is stored in the cache
+    // by prepending the api_key from the header to the token from the request body.
+    let full_session_key_to_lookup = format!("{}:{}", api_key_from_header, req.token);
+
+    if let Some(CacheEntry::Session(session)) = cache.peek(&full_session_key_to_lookup) {
+        if !session.is_valid {
+            return (
+                StatusCode::OK,
+                Json(ValidateTokenResponse {
+                    is_valid: false,
+                    user_id: None,
+                    expires_at: None,
+                    message: "Session has been invalidated".to_string(),
+                    brought_to_you_by: get_random_ad(&api_key_from_header),
+                }),
+            )
+                .into_response();
+        }
+
+        if now > session.expires_at {
+            return (
+                StatusCode::OK,
+                Json(ValidateTokenResponse {
+                    is_valid: false,
+                    user_id: None,
+                    expires_at: None,
+                    message: "Session has expired".to_string(),
+                    brought_to_you_by: get_random_ad(&api_key_from_header),
+                }),
+            )
+                .into_response();
+        }
+
+        return (
+            StatusCode::OK,
+            Json(ValidateTokenResponse {
+                is_valid: true,
+                user_id: Some(session.user_id.clone()),
+                expires_at: Some(session.expires_at),
+                message: "Session is valid".to_string(),
+                brought_to_you_by: get_random_ad(&api_key_from_header),
+            }),
+        )
+            .into_response();
+    }
+
+    (
+        StatusCode::OK,
+        Json(ValidateTokenResponse {
+            is_valid: false,
+            user_id: None,
+            expires_at: None,
+            message: "Invalid session token".to_string(),
+            brought_to_you_by: get_random_ad(&api_key_from_header),
+        }),
+    )
+        .into_response()
 }
