@@ -30,7 +30,7 @@ export function HeaderSimple() {
 
   const items = links.map((link) => {
     const isHashLink = link.link.startsWith('#');
-    const to = isHashLink 
+    const to = isHashLink
       ? (location.pathname === '/' ? link.link : `/${link.link}`)
       : link.link;
 
@@ -41,32 +41,27 @@ export function HeaderSimple() {
         onClick={(e) => {
           if (isHashLink && location.pathname === '/') {
             e.preventDefault();
-            // For hash links on home page, use smooth scroll
             const element = document.querySelector(link.link);
             if (element) {
               element.scrollIntoView({ behavior: 'smooth' });
               setActiveHash(link.link);
             }
           }
-          toggle();
+          // For desktop, toggle() is not needed unless the menu is also opened by these links
+          // If desktop links should close a potentially open mobile menu, keep toggle().
+          // For now, assuming desktop links don't interact with the mobile menu's opened state.
         }}
         className={({ isActive }) => {
-          // For hash links, only show active when explicitly clicked
-          if (isHashLink) {
-            return `block leading-none px-3 py-2 rounded-md no-underline text-sm font-medium transition-colors cursor-pointer ${
-              activeHash === link.link
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-700 hover:bg-stone-200'
-            }`;
-          }
-          // For regular links, use NavLink's isActive
+          const currentLinkIsActive = isHashLink
+            ? activeHash === link.link
+            : isActive;
+          const activeClasses = 'bg-blue-600 text-white';
+          const inactiveClasses = 'text-gray-700 hover:bg-stone-200';
           return `block leading-none px-3 py-2 rounded-md no-underline text-sm font-medium transition-colors cursor-pointer ${
-            isActive
-              ? 'bg-blue-600 text-white'
-              : 'text-gray-700 hover:bg-stone-200'
+            currentLinkIsActive ? activeClasses : inactiveClasses
           }`;
         }}
-        end={!isHashLink} // Only use 'end' for non-hash links
+        end={!isHashLink}
       >
         {link.label}
       </NavLink>
@@ -113,18 +108,20 @@ export function HeaderSimple() {
               <div className="flex flex-col divide-y divide-gray-100 m-0 p-0">
                 {links.map((link, index) => {
                   const isHashLink = link.link.startsWith('#');
-                  const to = isHashLink 
+                  const to = isHashLink
                     ? (location.pathname === '/' ? link.link : `/${link.link}`)
                     : link.link;
-                  let active = isHashLink
+                  // Mobile specific active check
+                  const mobileLinkIsActive = isHashLink
                     ? activeHash === link.link
-                    : false;
-                  // Always set text color explicitly based on active state
-                  const textColor = active ? 'text-white' : 'text-gray-700';
-                  // Always set background color explicitly
-                  const bgColor = active
+                    : location.pathname === link.link || (link.link === "/blog" && location.pathname.startsWith("/blog/"));
+                  
+                  const textColor = mobileLinkIsActive ? 'text-white' : 'text-gray-700';
+                  const bgColor = mobileLinkIsActive
                     ? 'bg-blue-600'
                     : (index % 2 === 0 ? 'bg-gray-50' : 'bg-white');
+                  
+                  // Need to pass isActive to NavLink for its own internal logic if not overriding completely
                   return (
                     <NavLink
                       key={link.label}
@@ -132,26 +129,27 @@ export function HeaderSimple() {
                       onClick={(e) => {
                         if (isHashLink && location.pathname === '/') {
                           e.preventDefault();
-                          // For hash links on home page, use smooth scroll
                           const element = document.querySelector(link.link);
                           if (element) {
                             element.scrollIntoView({ behavior: 'smooth' });
                             setActiveHash(link.link);
                           }
                         }
-                        toggle();
+                        toggle(); // Close mobile menu on click
                       }}
+                      // For mobile, we use the explicit bgColor and textColor
                       className={({ isActive }) => {
-                        let active = isHashLink
-                          ? activeHash === link.link
-                          : isActive;
-                        // Always set text color explicitly based on active state
-                        const textColor = active ? 'text-white' : 'text-gray-700';
-                        // Always set background color explicitly
-                        const bgColor = active
-                          ? 'bg-blue-600'
-                          : (index % 2 === 0 ? 'bg-gray-50' : 'bg-white');
-                        return `block w-full py-3 px-4 text-xl font-semibold text-left transition-colors cursor-pointer ${bgColor} ${textColor} hover:bg-stone-200`;
+                         // Re-evaluate active for mobile, as NavLink's isActive might be different from our definition
+                         const currentMobileActive = isHashLink
+                           ? activeHash === link.link
+                           : isActive; // Use NavLink's isActive for non-hash links on mobile too for consistency
+                        
+                         const mobileTextColor = currentMobileActive ? 'text-white' : 'text-gray-700';
+                         const mobileBgColor = currentMobileActive
+                           ? 'bg-blue-600'
+                           : (index % 2 === 0 ? 'bg-gray-50' : 'bg-white');
+
+                        return `block w-full py-3 px-4 text-xl font-semibold text-left transition-colors cursor-pointer ${mobileBgColor} ${mobileTextColor} hover:bg-stone-200`;
                       }}
                       end={!isHashLink}
                     >
