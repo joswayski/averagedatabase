@@ -38,13 +38,13 @@ export function Benchmarks() {
   return (
     <div className="py-16">
       <div className="container mx-auto px-4">
-        <h2 className="text-4xl font-bold text-center mb-8">Benchmarks</h2>
-        <Text size="lg" className="text-center mb-12 text-gray-600">
+        <h2 className="text-4xl font-bold text-center mb-2">Benchmarks</h2>
+        <Text size="lg" className="text-center  text-gray-600">
           Compare AvgDB against other popular databases across different performance metrics
         </Text>
 
-        <Card shadow="sm" padding="lg" radius="md" withBorder className="mb-8">
-          <Group justify="center" className="mb-8">
+        <Card shadow="sm" padding="lg" radius="md" withBorder className="mb-8 mt-4">
+          <Group justify="center" className="mb-2">
             <SegmentedControl
               value={activeTab}
               onChange={setActiveTab}
@@ -70,8 +70,26 @@ export function Benchmarks() {
               ]}
               size="lg"
             />
+
+
           </Group>
 
+          <div className="mb-6">
+
+
+{activeTab === 'query-latency' && (
+  <Text size="sm" c="dimmed" ta="center" className="mb-6">
+    Average query response time in milliseconds (lower is better). Results are recalculated on every page refresh.
+  </Text>
+)}
+
+{activeTab === 'backup' && (
+  <Text size="sm" c="dimmed" ta="center" className="mb-6">
+    Time to restore databases of different sizes (in minutes, lower is better). <b>AvgDB never goes down, so you'll never need to do a backup.</b>
+  </Text>
+)}
+
+</div>
           <Group justify="center" className="mb-6">
             {databases.map((db) => (
               <Switch

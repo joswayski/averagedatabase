@@ -42,8 +42,8 @@ export default function Home() {
       <main className="">
         <HeroBullets />
         <Benchmarks />
-        <Pricing />
         <Testimonials testimonials={testimonials} />
+        <Pricing />
         <Footer/>
       </main>
     </>

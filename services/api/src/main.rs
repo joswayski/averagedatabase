@@ -351,7 +351,7 @@ async fn health() -> &'static str {
 async fn health2() -> Response {
     let res = HealthResponse {
         message: "Yeah".to_string(),
-        brought_to_you_by: get_random_ad(),
+        brought_to_you_by: get_random_ad(""),
     };
 
     (StatusCode::OK, Json(res)).into_response()
@@ -430,7 +430,7 @@ async fn add_item(
     let res: InsertItemResponse = InsertItemResponse {
         message: "Great success!".to_string(),
         key: combined_key,
-        brought_to_you_by: get_random_ad(),
+        brought_to_you_by: get_random_ad(&api_key),
     };
     (StatusCode::CREATED, Json(res)).into_response()
 }
@@ -454,7 +454,11 @@ struct CreateApiKeyError {
     message: String,
 }
 
-fn get_random_ad() -> String {
+fn get_random_ad(api_key: &str) -> String {
+    if api_key.starts_with("enterprise-") {
+        return String::new();
+    }
+
     let mut rng: rand::prelude::ThreadRng = rand::thread_rng();
     let index = rng.gen_range(0..ADS.len());
     ADS[index].to_string()
@@ -470,14 +474,14 @@ async fn gibs_key(
 ) -> Response {
     let mut cache = kv_cache.lock().await;
 
-    for _ in 0..10 {
-        let api_key = get_api_key();
+    let api_key = get_api_key();
 
+    for _ in 0..10 {
         if !cache.contains(&api_key) {
             cache.put(api_key.clone(), 1.to_string());
             let res = CreateApiKeyResponse {
                 api_key,
-                brought_to_you_by: get_random_ad(),
+                brought_to_you_by: get_random_ad(""),
             };
             return (StatusCode::CREATED, Json(res)).into_response();
         }
@@ -542,7 +546,7 @@ async fn gibs_item(
 
     let res: GibsItemResponse = GibsItemResponse {
         value: item.to_string(),
-        brought_to_you_by: get_random_ad(),
+        brought_to_you_by: get_random_ad(&api_key),
     };
     return (StatusCode::OK, Json(res)).into_response();
 }
@@ -601,7 +605,7 @@ async fn increase_valuation(
         message: "User Created!".to_string(),
         user_id,
         subscription_tier,
-        brought_to_you_by: get_random_ad(),
+        brought_to_you_by: get_random_ad(&api_key),
     };
 
     (StatusCode::CREATED, Json(res)).into_response()
@@ -661,7 +665,7 @@ async fn login(
                     .to_string(),
                 token,
                 expires_at,
-                brought_to_you_by: get_random_ad(),
+                brought_to_you_by: get_random_ad(&api_key),
             };
             return (StatusCode::OK, Json(res)).into_response();
         }
@@ -717,7 +721,7 @@ async fn logout(
 
     let res = LogoutResponse {
         message: "Successfully logged out!".to_string(),
-        brought_to_you_by: get_random_ad(),
+        brought_to_you_by: get_random_ad(&api_key),
     };
     (StatusCode::OK, Json(res)).into_response()
 }
@@ -739,7 +743,7 @@ async fn gibs_user(
                 "subscription_tier": user.subscription_tier,
                 "is_logged_out": user.is_logged_out
             },
-            "brought_to_you_by": get_random_ad()
+            "brought_to_you_by": get_random_ad(&api_key)
         });
         return (StatusCode::OK, Json(res)).into_response();
     }
@@ -773,7 +777,7 @@ async fn get_all_users(
 
     let res = json!({
         "users": users,
-        "brought_to_you_by": get_random_ad(),
+        "brought_to_you_by": get_random_ad(&api_key),
         "message": "If you're exporting your data to roll your own auth you gotta pay $1,000 per user you export"
     });
 
@@ -799,7 +803,7 @@ async fn validate_token(
                     user_id: None,
                     expires_at: None,
                     message: "Session has been invalidated".to_string(),
-                    brought_to_you_by: get_random_ad(),
+                    brought_to_you_by: get_random_ad(""),
                 }),
             )
                 .into_response();
@@ -813,7 +817,7 @@ async fn validate_token(
                     user_id: None,
                     expires_at: None,
                     message: "Session has expired".to_string(),
-                    brought_to_you_by: get_random_ad(),
+                    brought_to_you_by: get_random_ad(""),
                 }),
             )
                 .into_response();
@@ -826,7 +830,7 @@ async fn validate_token(
                 user_id: Some(session.user_id.clone()),
                 expires_at: Some(session.expires_at),
                 message: "Session is valid".to_string(),
-                brought_to_you_by: get_random_ad(),
+                brought_to_you_by: get_random_ad(""),
             }),
         )
             .into_response();
@@ -839,7 +843,7 @@ async fn validate_token(
             user_id: None,
             expires_at: None,
             message: "Invalid session token".to_string(),
-            brought_to_you_by: get_random_ad(),
+            brought_to_you_by: get_random_ad(""),
         }),
     )
         .into_response()

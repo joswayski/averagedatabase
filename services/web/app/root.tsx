@@ -9,7 +9,7 @@ import {
   ScrollRestoration,
 } from "react-router";
 import { createTheme, MantineProvider } from '@mantine/core';
-
+import axios from 'axios';
 
 import "./app.css";
 
@@ -55,6 +55,33 @@ export default function App() {
   return <Outlet />
 
 }
+
+
+export const action = async ({ request }: { request: Request }) => {
+  const body = await request.formData();
+
+  const { _action, ...values } = Object.fromEntries(body);
+
+  try {
+    // Random number between 200 and 2000
+    const random = Math.floor(Math.random() * 1800) + 200;
+
+    await new Promise((resolve) => setTimeout(resolve, random));
+    const key = await axios.post(
+      `${
+        process.env.BASE_API_URL || "https://api.averagedatabase.com"
+      }/gibs-key`,
+      {}
+    );
+    return key.data;
+  } catch (error) {
+    console.error(`error man :/`);
+    console.error(error);
+    console.error(process.env.BASE_API_URL);
+    return { error: "sorry bruh we messed up :/" };
+  }
+};
+
 
 export function ErrorBoundary({ error }: { error: any }) {
   let message = "Oops!";

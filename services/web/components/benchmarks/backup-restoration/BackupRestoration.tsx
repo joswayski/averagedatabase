@@ -56,13 +56,6 @@ export function BackupRestoration({ enabledDbs }: BackupRestorationProps) {
 
   return (
     <Stack>
-      <Text size="xl" fw={600} ta="center" className="mb-2">
-        Backup Restoration Speed
-      </Text>
-      <Text size="sm" c="dimmed" ta="center" className="mb-6">
-        Time to restore databases of different sizes (in minutes, lower is better). <b>AvgDB never goes down, so you'll never need to do a backup.</b>
-      </Text>
-
       <BarChart
         h={400}
         data={chartData}

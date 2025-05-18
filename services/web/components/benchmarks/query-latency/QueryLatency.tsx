@@ -58,13 +58,6 @@ export default function QueryLatency({ enabledDbs }: QueryLatencyProps) {
 
   return (
     <Stack>
-      <Text size="xl" fw={600} ta="center" className="mb-10">
-        Query Latency Comparison
-      </Text>
-      <Text size="sm" c="dimmed" ta="center" className="mb-6">
-        Average query response time in milliseconds (lower is better). Results are recalculated on every page refresh. 
-      </Text>
-
       <AreaChart
         h={400}
         data={chartData}
