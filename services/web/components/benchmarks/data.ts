@@ -119,11 +119,17 @@ export const queryLatencyData = databases.map((db) => {
     baseValue = 7;
     variance = 6;
   } else if (db.id === "planetscale") {
-    baseValue = 40; // 2nd best, a little faster
+    baseValue = 40;
     variance = 20;
+  } else if (db.id === "aurora") {
+    baseValue = 80;
+    variance = 30;
+  } else if (db.id === "neondb") {
+    baseValue = 180;
+    variance = 40;
   } else {
-    baseValue = 90 + Math.random() * 60; // 90-150ms for others
-    variance = 60; // much larger spread
+    baseValue = 90 + Math.random() * 60;
+    variance = 25;
   }
   return {
     ...db,
@@ -174,6 +180,13 @@ export const backupRestorationData = databases.map((db) => {
       { size: "1 TB", minutes: 30 + Math.random() * 20 },
       { size: "10 TB", minutes: 60 + Math.random() * 40 },
       { size: "100 TB", minutes: 120 + Math.random() * 60 },
+    ];
+  } else if (db.id === "neondb") {
+    data = [
+      { size: "500 GB", minutes: 80 + Math.random() * 20 },
+      { size: "1 TB", minutes: 150 + Math.random() * 40 },
+      { size: "10 TB", minutes: 300 + Math.random() * 80 },
+      { size: "100 TB", minutes: 600 + Math.random() * 160 },
     ];
   } else {
     data = [

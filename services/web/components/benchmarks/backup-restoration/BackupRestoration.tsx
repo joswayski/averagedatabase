@@ -24,7 +24,7 @@ function CustomTooltip({ label, payload }: { label: string; payload: any[] }) {
             background: entry.color,
           }} />
           <Text size="sm">{entry.name}</Text>
-          <Text size="sm" fw={600}>{entry.value.toFixed(2)}</Text>
+          <Text size="sm" fw={600}>{Math.round(entry.value)} min</Text>
           {entry.name === 'AvgDB' && (
             <span role="img" aria-label="never down" title="Never needs restore">⚡</span>
           )}
@@ -60,7 +60,7 @@ export function BackupRestoration({ enabledDbs }: BackupRestorationProps) {
         Backup Restoration Speed
       </Text>
       <Text size="sm" c="dimmed" ta="center" className="mb-6">
-        Time to restore databases of different sizes (minutes, lower is better). <b>AvgDB never goes down, so you'll never need to do a backup.</b>
+        Time to restore databases of different sizes (in minutes, lower is better). <b>AvgDB never goes down, so you'll never need to do a backup.</b>
       </Text>
 
       <BarChart
@@ -74,10 +74,11 @@ export function BackupRestoration({ enabledDbs }: BackupRestorationProps) {
         tickLine="xy"
         gridAxis="xy"
         withTooltip={true}
-        valueFormatter={(value) => value.toFixed(2)}
+        valueFormatter={(value) => Math.round(value).toString()}
         tooltipProps={{
           content: ({ label, payload }) => <CustomTooltip label={label} payload={payload ?? []} />,
         }}
+        cursorFill="gray.1"
       />
     </Stack>
   );

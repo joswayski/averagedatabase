@@ -26,7 +26,7 @@ function CustomTooltip({ label, payload }: { label: string; payload: any[] }) {
           <Text size="sm">
           {entry.name}
           </Text>
-          <Text size="sm" fw={600}>{entry.value.toFixed(2)}</Text>
+          <Text size="sm" fw={600}>{Math.round(entry.value)}ms</Text>
           {entry.name === 'AvgDB' && (
             <span role="img" aria-label="fastest" title="Fastest">⚡</span>
           )}
@@ -79,7 +79,7 @@ export default function QueryLatency({ enabledDbs }: QueryLatencyProps) {
         withXAxis={false}
         withGradient={true}
         withTooltip={true}
-        valueFormatter={(value) => value.toFixed(2)}
+        valueFormatter={(value) => Math.round(value).toString()}
         tooltipProps={{
           content: ({ label, payload }) => <CustomTooltip label={label} payload={payload ?? []} />,
         }}
