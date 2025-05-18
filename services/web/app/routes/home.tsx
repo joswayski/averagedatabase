@@ -4,11 +4,10 @@ import { HeroBullets } from "../../components/HeroBullets";
 import { Testimonials } from "../../components/Testimonials";
 import { Benchmarks } from "../../components/benchmarks/Benchmarks";
 import { Pricing } from "../../components/Pricing";
+import { Blog } from "../../components/Blog";
 import { testimonials as allTestimonialsData } from "../data/testimonials";
 import { Footer } from "components/Footer";
-import { notifications } from '@mantine/notifications';
-import { Text } from '@mantine/core';
-import { Link } from 'react-router';
+
 import axios from "axios";
 import type { ShouldRevalidateFunctionArgs } from "react-router";
 
@@ -85,6 +84,7 @@ export default function Home() {
       <Benchmarks />
       <Testimonials testimonials={testimonials} />
       <Pricing />
+      <Blog />
       <Footer/>
     </main>
   );

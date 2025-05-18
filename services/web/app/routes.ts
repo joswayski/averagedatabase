@@ -8,4 +8,5 @@ import {
 export default [
   index("routes/home.tsx"),
   layout("routes/docs/layout.tsx", [route("docs", "routes/docs/docs.tsx")]),
+  route("blog/we-rich-lmao", "routes/blog/we-rich-lmao.tsx"),
 ] satisfies RouteConfig;

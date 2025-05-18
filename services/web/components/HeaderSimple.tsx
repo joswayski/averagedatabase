@@ -7,6 +7,7 @@ const links = [
   { link: '#benchmarks', label: 'Benchmarks' },
   { link: '#testimonials', label: 'Testimonials' },
   { link: '#pricing', label: 'Pricing' },
+  { link: '/blog', label: 'Blog' },
   { link: '/docs', label: 'Docs' }];
 
 export function HeaderSimple() {
