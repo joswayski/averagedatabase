@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Burger, Container, Group } from '@mantine/core';
+import { Burger, Container, Group, Box, Overlay, ActionIcon } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { Link, useNavigate, useLocation, useNavigation } from 'react-router';
+import { IconX } from '@tabler/icons-react';
 
 const links = [
   { link: '#benchmarks', label: 'Benchmarks' },
@@ -62,7 +63,10 @@ export function HeaderSimple() {
     link.link.startsWith('#') ? (
       <button
         key={link.label}
-        onClick={() => handleSectionClick(link.link)}
+        onClick={() => {
+          handleSectionClick(link.link);
+          toggle(); // Close menu after clicking
+        }}
         className={`block leading-none px-3 py-2 rounded-md no-underline text-gray-700 text-sm font-medium transition-colors cursor-pointer ${active === link.link ? 'bg-blue-600 text-white' : 'hover:bg-stone-200'}`}
         data-active={active === link.link || undefined}
       >
@@ -72,7 +76,10 @@ export function HeaderSimple() {
       <Link
         key={link.label}
         to={link.link}
-        onClick={() => setActive(link.link)}
+        onClick={() => {
+          setActive(link.link);
+          toggle(); // Close menu after clicking
+        }}
         className={`block leading-none px-3 py-2 rounded-md no-underline text-gray-700 text-sm font-medium transition-colors cursor-pointer ${active === link.link ? 'bg-blue-600 text-white' : 'hover:bg-stone-200'}`}
       >
         {link.label}
@@ -89,8 +96,39 @@ export function HeaderSimple() {
         <Group gap={5} visibleFrom="xs">
           {items}
         </Group>
-        <Burger opened={opened} onClick={toggle} hiddenFrom="xs" size="sm" className="cursor-pointer" />
+        {opened ? (
+          <ActionIcon 
+            onClick={toggle}
+            variant="subtle"
+            size="lg"
+            radius="xl"
+            hiddenFrom="xs"
+            className="cursor-pointer"
+          >
+            <IconX size={20} />
+          </ActionIcon>
+        ) : (
+          <Burger opened={opened} onClick={toggle} hiddenFrom="xs" size="sm" className="cursor-pointer" />
+        )}
       </Container>
+      
+      {/* Mobile menu with overlay */}
+      {opened && (
+        <>
+          <Overlay opacity={0.5} onClick={toggle} fixed zIndex={49} />
+          <Box hiddenFrom="xs" className="fixed inset-x-0 top-14 bg-white border-b border-gray-200 shadow-lg z-50">
+            <Container size="lg" p={0}>
+              <div className="flex flex-col divide-y divide-gray-100">
+                {items.map((item, index) => (
+                  <div key={index} className={`py-4 px-6 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </Container>
+          </Box>
+        </>
+      )}
     </header>
   );
 }
