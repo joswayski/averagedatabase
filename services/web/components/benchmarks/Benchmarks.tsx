@@ -98,7 +98,7 @@ export function Benchmarks() {
                 onChange={() => toggleDatabase(db.id)}
                 label={db.name}
                 labelPosition="left"
-                className="mx-2 cursor-pointer z-5000"
+                className="mx-2 cursor-pointer z-1"
                 color={db.color}
                 styles={{
                   root: { cursor: 'pointer' }, 

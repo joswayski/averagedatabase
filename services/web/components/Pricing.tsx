@@ -1,7 +1,9 @@
 import { Button, Container, Grid, Paper, Text, Title, rem } from '@mantine/core';
 import { IconCheck } from '@tabler/icons-react';
-import { useState } from 'react';
-import { Form, useNavigation } from 'react-router';
+import axios from 'axios';
+import { useState, useRef, useEffect } from 'react';
+import { Form, useNavigation, useSubmit, useLocation } from 'react-router';
+
 interface PricingFeature {
   text: string;
   included: boolean;
@@ -62,11 +64,53 @@ const tiers: PricingTier[] = [
 
 export function Pricing() {
   const navigation = useNavigation();
+  const submit = useSubmit();
+  const location = useLocation();
   const [submittedTier, setSubmittedTier] = useState<string | null>(null);
-  const isSubmitting = navigation.state === "submitting";
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const pricingRef = useRef<HTMLDivElement>(null);
+
+  // Preserve scroll position during form submission
+  useEffect(() => {
+    if (navigation.state === "submitting") {
+      // Store the current scroll position
+      const scrollPosition = window.scrollY;
+      
+      // After submission completes, restore the scroll position
+      const restoreScroll = () => {
+        window.scrollTo(0, scrollPosition);
+      };
+
+      // Listen for the next navigation event
+      const handleNavigation = () => {
+        restoreScroll();
+        window.removeEventListener('popstate', handleNavigation);
+      };
+
+      window.addEventListener('popstate', handleNavigation);
+      return () => window.removeEventListener('popstate', handleNavigation);
+    }
+  }, [navigation.state]);
+
+  const handleGetApiKey = async (tier: string) => {
+    try {
+      setIsSubmitting(true);
+      setSubmittedTier(tier);
+      
+      const response = await axios.post('http://localhost:8080/gibs-key');
+      // Handle the response here - you might want to show the API key in a modal or notification
+      console.log('API Key:', response.data);
+      
+    } catch (error) {
+      console.error('Error getting API key:', error);
+    } finally {
+      setIsSubmitting(false);
+      setSubmittedTier(null);
+    }
+  };
 
   return (
-    <Container id="pricing" size="lg" py="xl">
+    <Container id="pricing" size="lg" py="xl" ref={pricingRef}>
       <div className="text-center mb-12">
         <Title order={2} size={rem(40)} mb="md">
           Simple, "transparent" pricing
@@ -122,21 +166,20 @@ export function Pricing() {
               </div>
 
               <div className="mt-8">
-                <Form method="post" onSubmit={() => setSubmittedTier(tier.name)}>
-                  <input type="hidden" name="_action" value="get_api_key" />
-                  <input type="hidden" name="tier" value={tier.name} />
+                <div className="h-[42px]">
                   <Button
-                    type="submit"
+                    onClick={() => handleGetApiKey(tier.name)}
                     fullWidth
                     variant={tier.highlighted ? "filled" : "outline"}
                     size="lg"
                     radius="md"
                     loading={isSubmitting && submittedTier === tier.name}
                     disabled={isSubmitting}
+                    className="h-[42px] flex items-center justify-center"
                   >
                     {isSubmitting && submittedTier === tier.name ? "Generating..." : tier.buttonText}
                   </Button>
-                </Form>
+                </div>
               </div>
             </Paper>
           </Grid.Col>

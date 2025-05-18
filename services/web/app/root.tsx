@@ -57,28 +57,6 @@ export default function App() {
 }
 
 
-export const action = async ({ request }: { request: Request }) => {
-  const body = await request.formData();
-
-  const { _action, ...values } = Object.fromEntries(body);
-
-  try {
-
-    const key = await axios.post(
-      `${
-        process.env.BASE_API_URL || "http://localhost:8080"
-      }/gibs-key`,
-      {}
-    );
-    return key.data;
-  } catch (error) {
-    console.error(`error man :/`);
-    console.error(error);
-    console.error(process.env.BASE_API_URL);
-    return { error: "sorry bruh we messed up :/" };
-  }
-};
-
 
 export function ErrorBoundary({ error }: { error: any }) {
   let message = "Oops!";

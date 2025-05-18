@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Burger, Container, Group } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { Link, useNavigate, useLocation } from 'react-router';
+import { Link, useNavigate, useLocation, useNavigation } from 'react-router';
 
 const links = [
   { link: '#benchmarks', label: 'Benchmarks' },
@@ -14,9 +14,17 @@ export function HeaderSimple() {
   const [active, setActive] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
+  const navigation = useNavigation();
+  const lastScrollPosition = useRef<number>(0);
 
-  // Update active state when location changes
+  // Update active state when location changes, but not during form submissions
   useEffect(() => {
+    // Store scroll position when starting a submission
+    if (navigation.state === 'submitting') {
+      lastScrollPosition.current = window.scrollY;
+      return;
+    }
+
     // If we're on a specific page, set that as active
     if (location.pathname === '/docs') {
       setActive('/docs');
@@ -24,11 +32,24 @@ export function HeaderSimple() {
       // If we're on home and there's a hash, set that as active
       if (location.hash) {
         setActive(location.hash);
+        // Only scroll if this wasn't triggered by a form submission
+        if (!navigation.state && lastScrollPosition.current === 0) {
+          const element = document.querySelector(location.hash);
+          element?.scrollIntoView({ behavior: 'smooth' });
+        }
       } else {
-        setActive(''); // Clear active state if no hash
+        // Only clear active state if we're not in a form submission
+        if (!navigation.state) {
+          setActive('');
+        }
       }
     }
-  }, [location]);
+
+    // Reset scroll position reference after navigation completes
+    if (navigation.state === 'idle') {
+      lastScrollPosition.current = 0;
+    }
+  }, [location, navigation.state]);
 
   const handleSectionClick = (section: string) => {
     setActive(section);
@@ -38,7 +59,11 @@ export function HeaderSimple() {
     } else {
       // If we're already on home, just scroll
       const element = document.querySelector(section);
-      element?.scrollIntoView({ behavior: 'smooth' });
+      if (element) {
+        // Store current scroll position before scrolling
+        lastScrollPosition.current = window.scrollY;
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
