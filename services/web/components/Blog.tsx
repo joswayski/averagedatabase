@@ -2,29 +2,22 @@ import { AspectRatio, Card, Container, Image, SimpleGrid, Text, Title } from '@m
 import { Link } from 'react-router';
 
 const blogPosts = [
+
+  {
+    title: `They asked us what we would do if we couldn't raise another round..`,
+    image:
+      'https://i.redd.it/jv3d8mb9f2mb1.jpg',
+    date: 'August 18, 2022',
+    slug: 'top-10-norway',
+    excerpt: `I guess we'll never know`,
+  },
   {
     title: '✨Announcing our $50m Series A funding round✨',
     image:
-      'https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=720&q=80',
+      'https://i.pinimg.com/736x/84/c6/7d/84c67dfb0c53de176a87ed97f50b67a1.jpg',
     date: 'October 26, 2023',
     slug: 'we-rich-lmao',
     excerpt: 'Become Humbled 🙏 We just connedvinced our wonderful VCs to give us a bridge round...',
-  },
-  {
-    title: 'Top 10 places to visit in Norway this summer',
-    image:
-      'https://images.unsplash.com/photo-1527004013197-933c4bb611b3?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=720&q=80',
-    date: 'August 18, 2022',
-    slug: 'top-10-norway',
-    excerpt: 'Discover the breathtaking beauty of Norway with our top 10 summer destinations.',
-  },
-  {
-    title: 'Best forests to visit in North America',
-    image:
-      'https://images.unsplash.com/photo-1448375240586-882707db888b?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=720&q=80',
-    date: 'August 27, 2022',
-    slug: 'best-forests-na',
-    excerpt: 'Explore the most majestic forests across North America for your next adventure.',
   },
 ];
 
