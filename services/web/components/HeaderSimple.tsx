@@ -112,11 +112,11 @@ export function HeaderSimple() {
         )}
       </Container>
       
-      {/* Mobile menu with overlay */}
+      {/* Mobile menu with overlay - only show on mobile */}
       {opened && (
-        <>
+        <Box hiddenFrom="xs">
           <Overlay opacity={0.5} onClick={toggle} fixed zIndex={49} />
-          <Box hiddenFrom="xs" className="fixed inset-x-0 top-14 bg-white border-b border-gray-200 shadow-lg z-50">
+          <Box className="fixed inset-x-0 top-14 bg-white border-b border-gray-200 shadow-lg z-50">
             <Container size="lg" p={0}>
               <div className="flex flex-col divide-y divide-gray-100">
                 {items.map((item, index) => (
@@ -127,7 +127,7 @@ export function HeaderSimple() {
               </div>
             </Container>
           </Box>
-        </>
+        </Box>
       )}
     </header>
   );
