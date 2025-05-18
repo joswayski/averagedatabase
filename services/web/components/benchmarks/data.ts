@@ -7,20 +7,46 @@ const generateDataPoints = (
   isAvgDB: boolean
 ) => {
   const dates = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
+    "One",
+    "Two",
+    "Three",
+    "Four",
+    "Five",
+    "Six",
+    "Seven",
+    "Eight",
+    "Nine",
+    "Ten",
+    "Eleven",
+    "Twelve",
+    "Thirteen",
+    "Fourteen",
+    "Fifteen",
+    "Sixteen",
+    "Seventeen",
+    "Eighteen",
+    "Nineteen",
+    "Twenty",
+    "TwentyOne",
+    "TwentyTwo",
+    "TwentyThree",
+    "TwentyFour",
+    "TwentyFive",
+    "TwentySix",
+    "TwentySeven",
+    "TwentyEight",
+    "TwentyNine",
+    "Thirty",
+    "ThirtyOne",
+    "ThirtyTwo",
+    "ThirtyThree",
+    "ThirtyFour",
+    "ThirtyFive",
+    "ThirtySix",
+    "ThirtySeven",
+    "ThirtyEight",
   ];
-  return dates.map((month) => {
+  return dates.map((day) => {
     // Increase spread for non-AvgDB, keep AvgDB fastest
     const extraSpread = isAvgDB ? 0 : Math.random() * 15 + 5; // 5-20ms extra for non-AvgDB
     const randomVariance = (Math.random() - 0.5) * variance * (isAvgDB ? 1 : 2); // double variance for non-AvgDB
@@ -29,7 +55,7 @@ const generateDataPoints = (
       : baseValue + randomVariance + extraSpread;
     value = Math.round(value * 100) / 100; // Two decimals
     return {
-      date: `${month} 23`,
+      date: ``,
       value,
     };
   });
@@ -45,57 +71,56 @@ export const databases: Database[] = [
   {
     id: "aws-rds",
     name: "AWS RDS",
-    color: "orange.6",
+    color: "red.4",
     description: "Amazon's traditional relational database service",
   },
   {
     id: "aurora",
     name: "AWS Aurora",
-    color: "blue.6",
+    color: "gray.6",
     description: "AWS's cloud-native database",
   },
   {
     id: "neondb",
     name: "NeonDB",
-    color: "green.6",
+    color: "green.3",
     description: "Serverless Postgres platform",
   },
   {
     id: "planetscale",
     name: "PlanetScale",
-    color: "yellow.6",
+    color: "orange.6",
     description: "MySQL-compatible serverless platform",
   },
   {
     id: "supabase",
     name: "Supabase",
-    color: "grape.6",
+    color: "teal.8",
     description: "Open source Firebase alternative",
   },
   {
     id: "cockroachdb",
     name: "CockroachDB",
-    color: "red.6",
+    color: "violet.6",
     description: "Distributed SQL database",
   },
   {
     id: "turso",
     name: "Turso",
-    color: "cyan.6",
+    color: "cyan.3",
     description: "Edge-hosted SQLite platform",
   },
 ];
 
-// Query Latency Data (ms)
 export const queryLatencyData = databases.map((db) => {
   let baseValue;
   let variance;
   if (db.id === "avgdb") {
-    baseValue = 15;
-    variance = 10;
+    baseValue = 7;
+    variance = 6;
   } else if (db.id === "planetscale") {
     baseValue = 40; // 2nd best, a little faster
-    variance = 40;
+    variance = 20;
   } else {
     baseValue = 90 + Math.random() * 60; // 90-150ms for others
     variance = 60; // much larger spread
@@ -134,28 +159,32 @@ export const pricingData = databases.map((db) => ({
 }));
 
 // Backup Restoration Data (minutes to restore different data sizes)
-export const backupRestorationData = databases.map((db) => ({
-  ...db,
-  data: [
-    {
-      size: "100 GB",
-      minutes: db.id === "avgdb" ? 3 : 5 + Math.random() * 5,
-    },
-    {
-      size: "500 GB",
-      minutes: db.id === "avgdb" ? 12 : 20 + Math.random() * 15,
-    },
-    {
-      size: "1 TB",
-      minutes: db.id === "avgdb" ? 22 : 35 + Math.random() * 25,
-    },
-    {
-      size: "5 TB",
-      minutes: db.id === "avgdb" ? 95 : 160 + Math.random() * 80,
-    },
-    {
-      size: "10 TB",
-      minutes: db.id === "avgdb" ? 180 : 300 + Math.random() * 120,
-    },
-  ],
-}));
+export const backupRestorationData = databases.map((db) => {
+  let data;
+  if (db.id === "avgdb") {
+    data = [
+      { size: "500 GB", minutes: 0 },
+      { size: "1 TB", minutes: 0 },
+      { size: "10 TB", minutes: 0 },
+      { size: "100 TB", minutes: 0 },
+    ];
+  } else if (db.id === "planetscale") {
+    data = [
+      { size: "500 GB", minutes: 20 + Math.random() * 10 },
+      { size: "1 TB", minutes: 30 + Math.random() * 20 },
+      { size: "10 TB", minutes: 60 + Math.random() * 40 },
+      { size: "100 TB", minutes: 120 + Math.random() * 60 },
+    ];
+  } else {
+    data = [
+      { size: "500 GB", minutes: 50 + Math.random() * 30 },
+      { size: "1 TB", minutes: 110 + Math.random() * 40 },
+      { size: "10 TB", minutes: 250 + Math.random() * 80 },
+      { size: "100 TB", minutes: 400 + Math.random() * 100 },
+    ];
+  }
+  return {
+    ...db,
+    data,
+  };
+});

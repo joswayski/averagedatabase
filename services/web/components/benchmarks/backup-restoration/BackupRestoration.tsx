@@ -1,11 +1,37 @@
-import { BarChart } from '@mantine/charts';
-import { Text, Stack } from '@mantine/core';
+import { BarChart, getFilteredChartTooltipPayload } from '@mantine/charts';
+import { Text, Stack, Group, Paper } from '@mantine/core';
 import { backupRestorationData } from '../data';
 import type { BackupRestorationPoint } from '../types';
 import { NoDataAlert } from '../shared/NoDataAlert';
 
 interface BackupRestorationProps {
   enabledDbs: Record<string, boolean>;
+}
+
+function CustomTooltip({ label, payload }: { label: string; payload: any[] }) {
+  if (!payload) return null;
+  const filtered = getFilteredChartTooltipPayload(payload);
+  return (
+    <Paper shadow="md" p="sm" radius="md">
+      <Text fw={600} mb={4}>{label}</Text>
+      {filtered.map((entry: any) => (
+        <Group key={entry.name} gap="xs" align="center">
+          <span style={{
+            display: 'inline-block',
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            background: entry.color,
+          }} />
+          <Text size="sm">{entry.name}</Text>
+          <Text size="sm" fw={600}>{entry.value.toFixed(2)}</Text>
+          {entry.name === 'AvgDB' && (
+            <span role="img" aria-label="never down" title="Never needs restore">⚡</span>
+          )}
+        </Group>
+      ))}
+    </Paper>
+  );
 }
 
 export function BackupRestoration({ enabledDbs }: BackupRestorationProps) {
@@ -34,7 +60,7 @@ export function BackupRestoration({ enabledDbs }: BackupRestorationProps) {
         Backup Restoration Speed
       </Text>
       <Text size="sm" c="dimmed" ta="center" className="mb-6">
-        Time to restore databases of different sizes (minutes, lower is better)
+        Time to restore databases of different sizes (minutes, lower is better). <b>AvgDB never goes down, so you'll never need to do a backup.</b>
       </Text>
 
       <BarChart
@@ -47,7 +73,11 @@ export function BackupRestoration({ enabledDbs }: BackupRestorationProps) {
         }))}
         tickLine="xy"
         gridAxis="xy"
-
+        withTooltip={true}
+        valueFormatter={(value) => value.toFixed(2)}
+        tooltipProps={{
+          content: ({ label, payload }) => <CustomTooltip label={label} payload={payload ?? []} />,
+        }}
       />
     </Stack>
   );
