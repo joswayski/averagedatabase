@@ -110,12 +110,55 @@ export function HeaderSimple() {
           <Overlay opacity={0.5} onClick={toggle} fixed zIndex={49} />
           <Box className="fixed inset-x-0 top-14 bg-white border-b border-gray-200 shadow-lg z-50">
             <Container size="lg" p={0}>
-              <div className="flex flex-col divide-y divide-gray-100">
-                {items.map((item, index) => (
-                  <div key={index} className={`py-4 px-6 ${index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
-                    {item}
-                  </div>
-                ))}
+              <div className="flex flex-col divide-y divide-gray-100 m-0 p-0">
+                {links.map((link, index) => {
+                  const isHashLink = link.link.startsWith('#');
+                  const to = isHashLink 
+                    ? (location.pathname === '/' ? link.link : `/${link.link}`)
+                    : link.link;
+                  let active = isHashLink
+                    ? activeHash === link.link
+                    : false;
+                  // Always set text color explicitly based on active state
+                  const textColor = active ? 'text-white' : 'text-gray-700';
+                  // Always set background color explicitly
+                  const bgColor = active
+                    ? 'bg-blue-600'
+                    : (index % 2 === 0 ? 'bg-gray-50' : 'bg-white');
+                  return (
+                    <NavLink
+                      key={link.label}
+                      to={to}
+                      onClick={(e) => {
+                        if (isHashLink && location.pathname === '/') {
+                          e.preventDefault();
+                          // For hash links on home page, use smooth scroll
+                          const element = document.querySelector(link.link);
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth' });
+                            setActiveHash(link.link);
+                          }
+                        }
+                        toggle();
+                      }}
+                      className={({ isActive }) => {
+                        let active = isHashLink
+                          ? activeHash === link.link
+                          : isActive;
+                        // Always set text color explicitly based on active state
+                        const textColor = active ? 'text-white' : 'text-gray-700';
+                        // Always set background color explicitly
+                        const bgColor = active
+                          ? 'bg-blue-600'
+                          : (index % 2 === 0 ? 'bg-gray-50' : 'bg-white');
+                        return `block w-full py-3 px-4 text-xl font-semibold text-left transition-colors cursor-pointer ${bgColor} ${textColor} hover:bg-stone-200`;
+                      }}
+                      end={!isHashLink}
+                    >
+                      {link.label}
+                    </NavLink>
+                  );
+                })}
               </div>
             </Container>
           </Box>
