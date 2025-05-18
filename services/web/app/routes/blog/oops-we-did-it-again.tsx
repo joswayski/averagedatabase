@@ -44,17 +44,7 @@ export default function WeRichLmaoBlogPost() {
               <p className="text-lg text-gray-700 leading-relaxed mb-8">
               We also do AI now I guess. Gotta IPO eventually.
               </p>
-              <Paper shadow="sm" withBorder className="mb-10 p-30 pt-24">
-                <Image
-                  src="https://i.imgur.com/YfGBR3G.png" 
-                  alt="Totally Real Auth Growth Projections"
-                  radius="md"
-                  className="w-full"
-                />
-              </Paper>
-              
-              <Divider className="my-8" />
-              
+
               <Text className="text-xl text-gray-700 leading-relaxed text-center italic">
                 Stay tuned for our next pivot!
               </Text>

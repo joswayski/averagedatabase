@@ -6,6 +6,7 @@ import { Benchmarks } from "../../components/benchmarks/Benchmarks";
 import { Pricing } from "../../components/Pricing";
 import { testimonials as allTestimonialsData } from "../data/testimonials";
 import { Footer } from "components/Footer";
+import { AnnouncementBanner } from "../../components/AnnouncementBanner";
 
 import axios from "axios";
 import type { ShouldRevalidateFunctionArgs } from "react-router";
@@ -78,6 +79,7 @@ export default function Home() {
 
   return (
     <main className="">
+      <AnnouncementBanner />
       <HeaderSimple />
       <div className="bg-gradient-to-b from-stone-50 to-white">
         <HeroBullets />
