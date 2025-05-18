@@ -127,6 +127,9 @@ export const queryLatencyData = databases.map((db) => {
   } else if (db.id === "neondb") {
     baseValue = 180;
     variance = 40;
+  } else if (db.id === "supabase") {
+    baseValue = 70;
+    variance = 25;
   } else {
     baseValue = 90 + Math.random() * 60;
     variance = 25;
