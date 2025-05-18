@@ -59,7 +59,7 @@ export async function action({ request }: { request: Request }) {
   if (_action === 'getApiKey') {
     try {
       const response = await axios.post(
-        `http://localhost:8080/gibs-key`,
+        `https://api.averagedatabase.com/gibs-key`,
         {}
       );
       return response.data;
