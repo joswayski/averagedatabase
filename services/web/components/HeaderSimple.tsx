@@ -33,11 +33,13 @@ export function HeaderSimple() {
     const to = isHashLink
       ? (location.pathname === '/' ? link.link : `/${link.link}`)
       : link.link;
+    const shouldPrefetch = link.link === '/blog' || link.link === '/docs';
 
     return (
       <NavLink
         key={link.label}
         to={to}
+        prefetch={shouldPrefetch ? "intent" : undefined}
         onClick={(e) => {
           if (isHashLink && location.pathname === '/') {
             e.preventDefault();
@@ -111,6 +113,8 @@ export function HeaderSimple() {
                   const to = isHashLink
                     ? (location.pathname === '/' ? link.link : `/${link.link}`)
                     : link.link;
+                  const shouldPrefetch = link.link === '/blog' || link.link === '/docs';
+                  
                   // Mobile specific active check
                   const mobileLinkIsActive = isHashLink
                     ? activeHash === link.link
@@ -126,6 +130,7 @@ export function HeaderSimple() {
                     <NavLink
                       key={link.label}
                       to={to}
+                      prefetch={shouldPrefetch ? "intent" : undefined}
                       onClick={(e) => {
                         if (isHashLink && location.pathname === '/') {
                           e.preventDefault();
