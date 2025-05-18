@@ -1,4 +1,4 @@
-import { useLoaderData } from "react-router";
+import { useLoaderData, useActionData } from "react-router";
 import { HeaderSimple } from "../../components/HeaderSimple";
 import { HeroBullets } from "../../components/HeroBullets";
 import { Testimonials } from "../../components/Testimonials";
@@ -6,6 +6,7 @@ import { Benchmarks } from "../../components/benchmarks/Benchmarks";
 import { Pricing } from "../../components/Pricing";
 import { testimonials } from "../data/testimonials";
 import { Footer } from "components/Footer";
+import { ApiKeyNotification } from "../../components/ApiKeyNotification";
 import axios from "axios";
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -34,35 +35,34 @@ export function meta() {
   ];
 }
 
-
 export async function action({ request }: { request: Request }) {
   const body = await request.formData();
-  console.log(` BODY IN SERVER ACTION: ${body}`);
-
   const { _action, ...values } = Object.fromEntries(body);
 
-  try {
-
-    const key = await axios.post(
-      `http://localhost:8080/gibs-key`, // ! TODO
-      {}
-    );
-    return key.data;
-  } catch (error) {
-    console.error(`error man :/`);
-    console.error(error);
-    return { error: "sorry bruh we messed up :/" };
+  if (_action === 'getApiKey') {
+    try {
+      const response = await axios.post(
+        `http://localhost:8080/gibs-key`,
+        {}
+      );
+      return response.data;
+    } catch (error) {
+      console.error(`error man :/`);
+      console.error(error);
+      return { error: "sorry bruh we messed up :/" };
+    }
   }
-};
 
-
+  return null;
+}
 
 export default function Home() {
   const { testimonials } = useLoaderData<typeof loader>();
+  const actionData = useActionData<typeof action>();
 
   return (
     <>
-
+      <ApiKeyNotification actionData={actionData} />
       <main className="">
         <HeaderSimple />
         <HeroBullets />

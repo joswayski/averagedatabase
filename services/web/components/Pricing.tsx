@@ -1,8 +1,7 @@
 import { Button, Container, Grid, Paper, Text, Title, rem } from '@mantine/core';
 import { IconCheck } from '@tabler/icons-react';
-import axios from 'axios';
-import { useState, useRef, useEffect } from 'react';
-import { Form, useNavigation, useSubmit, useLocation } from 'react-router';
+import { useState, useRef } from 'react';
+import { useFetcher, Link } from 'react-router';
 
 interface PricingFeature {
   text: string;
@@ -63,51 +62,8 @@ const tiers: PricingTier[] = [
 ];
 
 export function Pricing() {
-  const navigation = useNavigation();
-  const submit = useSubmit();
-  const location = useLocation();
   const [submittedTier, setSubmittedTier] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const pricingRef = useRef<HTMLDivElement>(null);
-
-  // Preserve scroll position during form submission
-  useEffect(() => {
-    if (navigation.state === "submitting") {
-      // Store the current scroll position
-      const scrollPosition = window.scrollY;
-      
-      // After submission completes, restore the scroll position
-      const restoreScroll = () => {
-        window.scrollTo(0, scrollPosition);
-      };
-
-      // Listen for the next navigation event
-      const handleNavigation = () => {
-        restoreScroll();
-        window.removeEventListener('popstate', handleNavigation);
-      };
-
-      window.addEventListener('popstate', handleNavigation);
-      return () => window.removeEventListener('popstate', handleNavigation);
-    }
-  }, [navigation.state]);
-
-  const handleGetApiKey = async (tier: string) => {
-    try {
-      setIsSubmitting(true);
-      setSubmittedTier(tier);
-      
-      const response = await axios.post('http://localhost:8080/gibs-key');
-      // Handle the response here - you might want to show the API key in a modal or notification
-      console.log('API Key:', response.data);
-      
-    } catch (error) {
-      console.error('Error getting API key:', error);
-    } finally {
-      setIsSubmitting(false);
-      setSubmittedTier(null);
-    }
-  };
 
   return (
     <Container id="pricing" size="lg" py="xl" ref={pricingRef}>
@@ -121,69 +77,78 @@ export function Pricing() {
       </div>
 
       <Grid gutter="xl">
-        {tiers.map((tier) => (
-          <Grid.Col key={tier.name} span={{ base: 12, md: 4 }}>
-            <Paper
-              shadow="md"
-              p="xl"
-              radius="md"
-              withBorder
-              className={`h-full flex flex-col ${tier.highlighted ? 'border-blue-500 border-2' : ''}`}
-            >
-              <div className="mb-6 min-h-[120px]">
-                <Title order={3} mb="xs">
-                  {tier.name}
-                </Title>
-                <Text size="sm" c="dimmed" mb="md" className="min-h-[40px]">
-                  {tier.description}
-                </Text>
-                <div className="flex items-baseline">
-                  <Text size="xl" fw={700}>
-                    {tier.price}
+        {tiers.map((tier) => {
+          const fetcher = useFetcher();
+          const isSubmitting = fetcher.state === "submitting" && submittedTier === tier.name;
+
+          return (
+            <Grid.Col key={tier.name} span={{ base: 12, md: 4 }}>
+              <Paper
+                shadow="md"
+                p="xl"
+                radius="md"
+                withBorder
+                className={`h-full flex flex-col ${tier.highlighted ? 'border-blue-500 border-2' : ''}`}
+              >
+                <div className="mb-6 min-h-[120px]">
+                  <Title order={3} mb="xs">
+                    {tier.name}
+                  </Title>
+                  <Text size="sm" c="dimmed" mb="md" className="min-h-[40px]">
+                    {tier.description}
                   </Text>
-                  {tier.price !== "Custom" && (
-                    <Text size="sm" c="dimmed" ml={4}>
-                    {tier.price === "$1" ? " per million queries" : "per month"}
+                  <div className="flex items-baseline">
+                    <Text size="xl" fw={700}>
+                      {tier.price}
                     </Text>
-                  )}
+                    {tier.price !== "Custom" && (
+                      <Text size="sm" c="dimmed" ml={4}>
+                      {tier.price === "$1" ? " per million queries" : "per month"}
+                      </Text>
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex-grow">
-                <ul className="space-y-3">
-                  {tier.features.map((feature, index) => (
-                    <li key={index} className="flex items-start">
-                      <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 mr-2">
-                        <IconCheck
-                          size={16}
-                          className={`${feature.included ? 'text-green-500' : 'text-gray-300'}`}
-                        />
-                      </div>
-                      <Text size="sm">{feature.text}</Text>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="mt-8">
-                <div className="h-[42px]">
-                  <Button
-                    onClick={() => handleGetApiKey(tier.name)}
-                    fullWidth
-                    variant={tier.highlighted ? "filled" : "outline"}
-                    size="lg"
-                    radius="md"
-                    loading={isSubmitting && submittedTier === tier.name}
-                    disabled={isSubmitting}
-                    className="h-[42px] flex items-center justify-center"
-                  >
-                    {isSubmitting && submittedTier === tier.name ? "Generating..." : tier.buttonText}
-                  </Button>
+                <div className="flex-grow">
+                  <ul className="space-y-3">
+                    {tier.features.map((feature, index) => (
+                      <li key={index} className="flex items-start">
+                        <div className="w-5 h-5 flex items-center justify-center flex-shrink-0 mr-2">
+                          <IconCheck
+                            size={16}
+                            className={`${feature.included ? 'text-green-500' : 'text-gray-300'}`}
+                          />
+                        </div>
+                        <Text size="sm">{feature.text}</Text>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </div>
-            </Paper>
-          </Grid.Col>
-        ))}
+
+                <div className="mt-8">
+                  <div className="h-[42px]">
+                    <fetcher.Form method="post">
+                      <input type="hidden" name="_action" value="getApiKey" />
+                      <Button
+                        type="submit"
+                        fullWidth
+                        variant={tier.highlighted ? "filled" : "outline"}
+                        size="lg"
+                        radius="md"
+                        loading={isSubmitting}
+                        disabled={isSubmitting}
+                        className="h-[42px] flex items-center justify-center"
+                        onClick={() => setSubmittedTier(tier.name)}
+                      >
+                        {isSubmitting ? "Generating..." : tier.buttonText}
+                      </Button>
+                    </fetcher.Form>
+                  </div>
+                </div>
+              </Paper>
+            </Grid.Col>
+          );
+        })}
       </Grid>
     </Container>
   );

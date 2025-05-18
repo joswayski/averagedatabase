@@ -17,14 +17,8 @@ export function HeaderSimple() {
   const navigation = useNavigation();
   const lastScrollPosition = useRef<number>(0);
 
-  // Update active state when location changes, but not during form submissions
+  // Update active state when location changes
   useEffect(() => {
-    // Store scroll position when starting a submission
-    if (navigation.state === 'submitting') {
-      lastScrollPosition.current = window.scrollY;
-      return;
-    }
-
     // If we're on a specific page, set that as active
     if (location.pathname === '/docs') {
       setActive('/docs');
@@ -33,21 +27,13 @@ export function HeaderSimple() {
       if (location.hash) {
         setActive(location.hash);
         // Only scroll if this wasn't triggered by a form submission
-        if (!navigation.state && lastScrollPosition.current === 0) {
+        if (navigation.state === 'idle') {
           const element = document.querySelector(location.hash);
           element?.scrollIntoView({ behavior: 'smooth' });
         }
       } else {
-        // Only clear active state if we're not in a form submission
-        if (!navigation.state) {
-          setActive('');
-        }
+        setActive('');
       }
-    }
-
-    // Reset scroll position reference after navigation completes
-    if (navigation.state === 'idle') {
-      lastScrollPosition.current = 0;
     }
   }, [location, navigation.state]);
 
@@ -60,8 +46,6 @@ export function HeaderSimple() {
       // If we're already on home, just scroll
       const element = document.querySelector(section);
       if (element) {
-        // Store current scroll position before scrolling
-        lastScrollPosition.current = window.scrollY;
         element.scrollIntoView({ behavior: 'smooth' });
       }
     }

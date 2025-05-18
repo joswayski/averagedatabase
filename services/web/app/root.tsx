@@ -9,7 +9,7 @@ import {
   ScrollRestoration,
 } from "react-router";
 import { createTheme, MantineProvider } from '@mantine/core';
-import axios from 'axios';
+import { Notifications } from '@mantine/notifications';
 
 import "./app.css";
 
@@ -42,8 +42,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-      <MantineProvider theme={theme}>{children}</MantineProvider>
 
+      <MantineProvider theme={theme}>
+
+      <Notifications />
+
+        
+        {children}
+        
+        </MantineProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
