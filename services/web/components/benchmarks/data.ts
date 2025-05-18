@@ -116,8 +116,8 @@ export const queryLatencyData = databases.map((db) => {
   let baseValue;
   let variance;
   if (db.id === "avgdb") {
-    baseValue = 7;
-    variance = 6;
+    baseValue = 3;
+    variance = 2;
   } else if (db.id === "planetscale") {
     baseValue = 40;
     variance = 20;
