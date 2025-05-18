@@ -35,7 +35,7 @@ const tiers: PricingTier[] = [
   {
     name: "Pay as you go",
     description: "You don't have an accounting team yet so you actually believe this is a good idea",
-    price: "$1",
+    price: "$10",
     buttonText: "Get API key",
     highlighted: true,
     features: [
@@ -150,7 +150,7 @@ export function Pricing() {
                     </Text>
                     {tier.price !== "Custom" && (
                       <Text size="sm" c="dimmed" ml={4}>
-                      {tier.price === "$1" ? " per million queries" : "per month"}
+                      {tier.price === "$10" ? " per million queries" : "per month"}
                       </Text>
                     )}
                   </div>
