@@ -21,7 +21,7 @@ export default function WeRichLmaoBlogPost() {
                 ✨Announcing our $50m Series A funding round✨
               </Title>
               <div className="flex items-center gap-4">
-                <Text className="text-blue-100">October 26, 2023</Text>
+                <Text className="text-blue-100">June 8, 2024</Text>
                 <Divider orientation="vertical" className="bg-blue-400" />
                 <Text className="text-blue-100">2 min read</Text>
               </div>

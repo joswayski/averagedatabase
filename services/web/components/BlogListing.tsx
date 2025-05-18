@@ -16,7 +16,7 @@ const blogPosts = [
     title: '✨Announcing our $50m Series A funding round✨',
     image:
       'https://i.pinimg.com/736x/84/c6/7d/84c67dfb0c53de176a87ed97f50b67a1.jpg',
-    date: 'October 26, 2023',
+    date: 'June 8, 2024',
     slug: 'we-rich-lmao',
     excerpt: 'We just connedvinced our wonderful VCs to give us a bridge round...',
   },
