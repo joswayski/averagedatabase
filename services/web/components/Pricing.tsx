@@ -66,7 +66,7 @@ export function Pricing() {
   const isSubmitting = navigation.state === "submitting";
 
   return (
-    <Container size="lg" py="xl">
+    <Container id="pricing" size="lg" py="xl">
       <div className="text-center mb-12">
         <Title order={2} size={rem(40)} mb="md">
           Simple, "transparent" pricing

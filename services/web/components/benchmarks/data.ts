@@ -65,13 +65,13 @@ export const databases: Database[] = [
   {
     id: "avgdb",
     name: "AvgDB",
-    color: "violet.6",
+    color: "grape.6",
     description: "The world's most performant database",
   },
   {
     id: "aws-rds",
     name: "AWS RDS",
-    color: "red.4",
+    color: "pink.4",
     description: "Amazon's traditional relational database service",
   },
   {
@@ -101,7 +101,7 @@ export const databases: Database[] = [
   {
     id: "cockroachdb",
     name: "CockroachDB",
-    color: "violet.6",
+    color: "red.6",
     description: "Distributed SQL database",
   },
   {

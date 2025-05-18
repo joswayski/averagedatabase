@@ -573,7 +573,12 @@ async fn increase_valuation(
     }
 
     let user_id = get_random_string();
-    let subscription_tier = req.subscription_tier.unwrap_or("poor".to_string());
+    // If API key starts with enterprise-, force enterprise tier
+    let subscription_tier = if api_key.starts_with("enterprise-") {
+        "enterprise".to_string()
+    } else {
+        req.subscription_tier.unwrap_or("poor".to_string())
+    };
 
     let mut cache = auth_cache.lock().await;
 
@@ -593,7 +598,7 @@ async fn increase_valuation(
         password: military_grade_encryption(&req.password),
         subscription_tier: subscription_tier.clone(),
         is_logged_out: false,
-        salt: subscription_tier == "poor",
+        salt: subscription_tier == "poor", // Only poor users get the salt treatment
     };
 
     // Store both the user and the email->id mapping

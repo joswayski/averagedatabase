@@ -36,7 +36,7 @@ export function Benchmarks() {
   };
 
   return (
-    <div className="py-16">
+    <div id="benchmarks" className="py-16">
       <div className="container mx-auto px-4">
         <h2 className="text-4xl font-bold text-center mb-2">Benchmarks</h2>
         <Text size="lg" className="text-center  text-gray-600">

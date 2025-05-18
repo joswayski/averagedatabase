@@ -368,17 +368,23 @@ export default function Docs() {
             </div>
 
             <Group justify="center" mt="xl">
-              <Text size="sm" c="dimmed">
-                <IconBrandGithub size={16} style={{ marginRight: 8 }} />
-                <a 
-                  href="https://github.com/josevalerio/averagedatabase" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-inherit no-underline"
-                >
-                  View on GitHub
-                </a>
-              </Text>
+              <a
+                href="https://github.com/josevalerio/averagedatabase"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="github-btn flex items-center gap-2 text-inherit no-underline text-gray-500"
+                style={{
+                  fontSize: '0.95rem',
+                  background: 'white',
+                  borderRadius: '6px',
+                  padding: '0.5rem 1rem',
+                  outline: '2px solid #24292f',
+                  transition: 'background 0.2s, color 0.2s'
+                }}
+              >
+                <IconBrandGithub className="github-icon" size={18} />
+                <span>View on GitHub</span>
+              </a>
             </Group>
           </Stack>
         </Grid.Col>
