@@ -1,5 +1,6 @@
 import { IconCheck } from '@tabler/icons-react';
 import { Button, Container, Group, Image, List, Text, ThemeIcon, Title } from '@mantine/core';
+import { Link } from 'react-router';
 
 const factsheet = [
     {
@@ -54,7 +55,13 @@ export function HeroBullets() {
 
 
           <Group mt={30}>
-            <Button radius="xl" size="md" className="text-base px-6 py-2 rounded-full font-medium">
+            <Button
+              radius="xl"
+              size="md"
+              className="text-base px-6 py-2 rounded-full font-medium"
+              component={Link}
+              to="/docs"
+            >
               View Docs
             </Button>
             <Button
