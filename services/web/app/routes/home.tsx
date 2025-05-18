@@ -4,10 +4,13 @@ import { HeroBullets } from "../../components/HeroBullets";
 import { Testimonials } from "../../components/Testimonials";
 import { Benchmarks } from "../../components/benchmarks/Benchmarks";
 import { Pricing } from "../../components/Pricing";
-import { testimonials } from "../data/testimonials";
+import { testimonials as allTestimonialsData } from "../data/testimonials";
 import { Footer } from "components/Footer";
-import { ApiKeyNotification } from "../../components/ApiKeyNotification";
+import { notifications } from '@mantine/notifications';
+import { Text } from '@mantine/core';
+import { Link } from 'react-router';
 import axios from "axios";
+import type { ShouldRevalidateFunctionArgs } from "react-router";
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -18,9 +21,15 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
+// Remove module-level pre-processing if it exists
+// const featuredTestimonials = allTestimonialsData.filter(t => t.featured);
+// const regularTestimonialsRaw = allTestimonialsData.filter(t => !t.featured);
+// const shuffledRegularTestimonials = shuffleArray(regularTestimonialsRaw);
+// const stableTestimonialList = [...featuredTestimonials, ...shuffledRegularTestimonials];
+
 export async function loader() {
-  const featured = testimonials.filter(t => t.featured);
-  const regular = testimonials.filter(t => !t.featured);
+  const featured = allTestimonialsData.filter(t => t.featured);
+  const regular = allTestimonialsData.filter(t => !t.featured);
   const shuffledRegular = shuffleArray(regular);
 
   return {
@@ -33,6 +42,16 @@ export function meta() {
     { title: "Average Database" },
     { name: "description", content: "The world's most performant, secure, scalable, reliable, free-est, open source data platform" },
   ];
+}
+
+export function shouldRevalidate({
+  formData,
+  defaultShouldRevalidate
+}: ShouldRevalidateFunctionArgs) {
+  if (formData && formData.get("_action") === "getApiKey") {
+    return false;
+  }
+  return defaultShouldRevalidate;
 }
 
 export async function action({ request }: { request: Request }) {
@@ -58,19 +77,15 @@ export async function action({ request }: { request: Request }) {
 
 export default function Home() {
   const { testimonials } = useLoaderData<typeof loader>();
-  const actionData = useActionData<typeof action>();
 
   return (
-    <>
-      <ApiKeyNotification actionData={actionData} />
-      <main className="">
-        <HeaderSimple />
-        <HeroBullets />
-        <Benchmarks />
-        <Testimonials testimonials={testimonials} />
-        <Pricing />
-        <Footer/>
-      </main>
-    </>
+    <main className="">
+      <HeaderSimple />
+      <HeroBullets />
+      <Benchmarks />
+      <Testimonials testimonials={testimonials} />
+      <Pricing />
+      <Footer/>
+    </main>
   );
 }

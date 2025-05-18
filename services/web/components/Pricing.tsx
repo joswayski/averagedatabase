@@ -1,7 +1,9 @@
-import { Button, Container, Grid, Paper, Text, Title, rem } from '@mantine/core';
-import { IconCheck } from '@tabler/icons-react';
-import { useState, useRef } from 'react';
+import { Button, Container, Grid, Paper, Text, Title, rem, Group, CopyButton, ActionIcon } from '@mantine/core';
+import { IconCheck, IconCopy } from '@tabler/icons-react';
+import { useState, useRef, useEffect } from 'react';
 import { useFetcher, Link } from 'react-router';
+import { notifications } from '@mantine/notifications';
+import type { action } from '../app/routes/home';
 
 interface PricingFeature {
   text: string;
@@ -64,6 +66,52 @@ const tiers: PricingTier[] = [
 export function Pricing() {
   const [submittedTier, setSubmittedTier] = useState<string | null>(null);
   const pricingRef = useRef<HTMLDivElement>(null);
+  const fetcher = useFetcher<typeof action>();
+
+  useEffect(() => {
+    if (fetcher.data && fetcher.state === 'idle') {
+      const data = fetcher.data as any;
+      if (data.api_key) {
+        notifications.show({
+          title: 'API Key Generated! 🎉',
+          message: (
+            <div>
+              <Group wrap="nowrap" gap="xs" align="center">
+                <Text size="sm">Your API key: <code>{data.api_key}</code></Text>
+                <CopyButton value={data.api_key} timeout={2000}>
+                  {({ copied, copy }) => (
+                    <ActionIcon color={copied ? 'teal' : 'gray'} onClick={copy} title={copied ? 'Copied API Key' : 'Copy API Key'} variant="subtle">
+                      {copied ? <IconCheck style={{ width: rem(16), height: rem(16) }} /> : <IconCopy style={{ width: rem(16), height: rem(16) }} />}
+                    </ActionIcon>
+                  )}
+                </CopyButton>
+              </Group>
+              <Text size="sm" mb="xs">Keep this key safe! You'll need it for all API requests.</Text>
+              <Text size="sm" component={Link} to="/docs" style={{ color: 'var(--mantine-color-blue-6)', textDecoration: 'underline' }}>
+                Click here to view the API documentation →
+              </Text>
+              {data.brought_to_you_by && (
+                <Text size="xs" c="dimmed" mt="xs" style={{ fontStyle: 'italic' }}>
+                  {data.brought_to_you_by}
+                </Text>
+              )}
+            </div>
+          ),
+          color: 'blue',
+          autoClose: false,
+          withCloseButton: true,
+          position: 'top-center',
+        });
+      } else if (data.error) {
+        notifications.show({
+          title: 'Error',
+          message: data.error,
+          color: 'red',
+          position: 'top-center',
+        });
+      }
+    }
+  }, [fetcher.data, fetcher.state]);
 
   return (
     <Container id="pricing" size="lg" py="xl" ref={pricingRef}>
@@ -78,7 +126,6 @@ export function Pricing() {
 
       <Grid gutter="xl">
         {tiers.map((tier) => {
-          const fetcher = useFetcher();
           const isSubmitting = fetcher.state === "submitting" && submittedTier === tier.name;
 
           return (
@@ -127,7 +174,9 @@ export function Pricing() {
 
                 <div className="mt-8">
                   <div className="h-[42px]">
-                    <fetcher.Form method="post">
+                    <fetcher.Form
+                      method="post"
+                    >
                       <input type="hidden" name="_action" value="getApiKey" />
                       <Button
                         type="submit"

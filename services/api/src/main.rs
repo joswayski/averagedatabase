@@ -223,7 +223,7 @@ struct UserQuery {
 
 #[derive(Deserialize)]
 struct LogoutRequest {
-    email: String,
+    user_id: String,
 }
 
 #[derive(Serialize)]
@@ -245,7 +245,7 @@ struct InsertItemResponse {
 }
 
 #[derive(Deserialize)]
-struct ValidateTokenRequest {
+struct ValidateSessionRequest {
     token: String,
 }
 
@@ -318,8 +318,8 @@ async fn main() {
                 .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
         )
         .route(
-            "/validate-token",
-            post(validate_token)
+            "/validate-session",
+            post(validate_session)
                 .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
         )
         .layer(
@@ -654,21 +654,25 @@ async fn login(
                 .as_secs();
             let expires_at = now + 24 * 60 * 60; // 24 hours from now
 
-            let token = format!("{}:{}:{}", api_key, user.id, get_random_string());
+            let random_part = get_random_string();
+            // Full key for storing in cache, includes the organization's API key for namespacing
+            let session_key_for_cache = format!("{}:{}:{}", api_key, user.id, random_part);
+            // Token returned to client, does not include the organization's API key
+            let token_for_client = format!("{}:{}", user.id, random_part);
 
-            // Store the session
+            // Store the session using the full key
             let session = Session {
                 user_id: user.id.clone(),
                 created_at: now,
                 expires_at,
                 is_valid: true,
             };
-            cache.put(token.clone(), CacheEntry::Session(session));
+            cache.put(session_key_for_cache.clone(), CacheEntry::Session(session));
 
             let res = LoginResponse {
                 message: "Login successful! Don't share this session token with anyone!"
                     .to_string(),
-                token,
+                token: token_for_client, // Return only user_id:random_part
                 expires_at,
                 brought_to_you_by: get_random_ad(&api_key),
             };
@@ -690,27 +694,39 @@ async fn logout(
 ) -> Response {
     let mut cache = auth_cache.lock().await;
 
-    // First get the user ID from email
-    let email_key = make_email_key(&api_key, &req.email);
-    let user_id = match cache.peek(&email_key) {
-        Some(CacheEntry::EmailToId(id)) => id.clone(),
-        _ => {
-            return (StatusCode::NOT_FOUND, "User not found".to_string()).into_response();
+    // Verify that the user_id belongs to the organization tied to the api_key
+    let user_key_to_verify = make_user_key(&api_key, &req.user_id);
+    match cache.peek(&user_key_to_verify) {
+        Some(CacheEntry::User(_)) => {
+            // User exists for this API key, proceed.
         }
-    };
+        _ => {
+            // User not found for this API key, or it's not a User entry (which shouldn't happen for a user_key)
+            return (
+                StatusCode::NOT_FOUND,
+                "User not found for the provided API key.".to_string(),
+            )
+                .into_response();
+        }
+    }
 
-    // Create a new cache to store updated entries
+    // The user_id from the request is the one we will operate on.
+    let target_user_id = &req.user_id;
+
+    // Create a new cache to store updated entries (actually, a vec of updates)
     let mut updated_entries = Vec::new();
 
     // First pass: collect all entries that need to be updated
     for (key, entry) in cache.iter() {
         match entry {
-            CacheEntry::Session(session) if session.user_id == user_id => {
+            CacheEntry::Session(session) if &session.user_id == target_user_id => {
                 let mut invalidated_session = session.clone();
                 invalidated_session.is_valid = false;
                 updated_entries.push((key.clone(), CacheEntry::Session(invalidated_session)));
             }
-            CacheEntry::User(user) if user.id == user_id => {
+            // Specifically update the user object whose key matches user_key_to_verify
+            CacheEntry::User(user) if key == &user_key_to_verify => {
+                // Ensures we only update the target user for this org
                 let mut updated_user = user.clone();
                 updated_user.is_logged_out = true;
                 updated_entries.push((key.clone(), CacheEntry::User(updated_user)));
@@ -789,9 +805,10 @@ async fn get_all_users(
     (StatusCode::OK, Json(res)).into_response()
 }
 
-async fn validate_token(
+async fn validate_session(
     Extension(auth_cache): Extension<Arc<Mutex<LruCache<String, CacheEntry>>>>,
-    Json(req): Json<ValidateTokenRequest>,
+    Extension(api_key_from_header): Extension<String>,
+    Json(req): Json<ValidateSessionRequest>,
 ) -> Response {
     let cache = auth_cache.lock().await;
     let now = std::time::SystemTime::now()
@@ -799,7 +816,11 @@ async fn validate_token(
         .unwrap()
         .as_secs();
 
-    if let Some(CacheEntry::Session(session)) = cache.peek(&req.token) {
+    // Reconstruct the full session key that is stored in the cache
+    // by prepending the api_key from the header to the token from the request body.
+    let full_session_key_to_lookup = format!("{}:{}", api_key_from_header, req.token);
+
+    if let Some(CacheEntry::Session(session)) = cache.peek(&full_session_key_to_lookup) {
         if !session.is_valid {
             return (
                 StatusCode::OK,
@@ -808,7 +829,7 @@ async fn validate_token(
                     user_id: None,
                     expires_at: None,
                     message: "Session has been invalidated".to_string(),
-                    brought_to_you_by: get_random_ad(""),
+                    brought_to_you_by: get_random_ad(&api_key_from_header),
                 }),
             )
                 .into_response();
@@ -822,7 +843,7 @@ async fn validate_token(
                     user_id: None,
                     expires_at: None,
                     message: "Session has expired".to_string(),
-                    brought_to_you_by: get_random_ad(""),
+                    brought_to_you_by: get_random_ad(&api_key_from_header),
                 }),
             )
                 .into_response();
@@ -835,7 +856,7 @@ async fn validate_token(
                 user_id: Some(session.user_id.clone()),
                 expires_at: Some(session.expires_at),
                 message: "Session is valid".to_string(),
-                brought_to_you_by: get_random_ad(""),
+                brought_to_you_by: get_random_ad(&api_key_from_header),
             }),
         )
             .into_response();
@@ -848,7 +869,7 @@ async fn validate_token(
             user_id: None,
             expires_at: None,
             message: "Invalid session token".to_string(),
-            brought_to_you_by: get_random_ad(""),
+            brought_to_you_by: get_random_ad(&api_key_from_header),
         }),
     )
         .into_response()

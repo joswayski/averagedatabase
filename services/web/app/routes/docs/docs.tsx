@@ -109,7 +109,7 @@ const authEndpoints: Endpoint[] = [
     },
     response: {
       message: 'Login successful! Don\'t share this session token with anyone!',
-      token: 'api_key:user_id:random_string',
+      token: 'user_id:random_string',
       expires_at: 1234567890,
       brought_to_you_by: getRandomAd()
     },
@@ -118,9 +118,9 @@ const authEndpoints: Endpoint[] = [
   {
     method: 'POST',
     path: '/get-out',
-    description: 'Logout endpoint',
+    description: 'Logout endpoint. Requires user_id in the request body.',
     request: {
-      email: 'user@example.com'
+      user_id: 'random_user_id'
     },
     response: {
       message: 'Successfully logged out!',
@@ -164,10 +164,10 @@ const authEndpoints: Endpoint[] = [
   },
   {
     method: 'POST',
-    path: '/validate-token',
-    description: 'Validate a session token',
+    path: '/validate-session',
+    description: "Validate a session token. The x-averagedb-api-key header must contain the requester's API key. The request body should contain the token (e.g., 'user_id:random_string') received from the login endpoint.",
     request: {
-      token: 'api_key:user_id:random_string'
+      token: 'user_id:random_string'
     },
     response: {
       is_valid: true,
@@ -369,21 +369,19 @@ export default function Docs() {
 
             <Group justify="center" mt="xl">
               <a
-                href="https://github.com/josevalerio/averagedatabase"
+                href="https://github.com/joswayski/averagedatabase"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="github-btn flex items-center gap-2 text-inherit no-underline text-gray-500"
+                className="github-btn group flex items-center gap-2 text-inherit no-underline text-gray-500 hover:bg-[#24292f] transition-colors duration-100"
                 style={{
                   fontSize: '0.95rem',
-                  background: 'white',
                   borderRadius: '6px',
                   padding: '0.5rem 1rem',
                   outline: '2px solid #24292f',
-                  transition: 'background 0.2s, color 0.2s'
                 }}
               >
-                <IconBrandGithub className="github-icon" size={18} />
-                <span>View on GitHub</span>
+                <IconBrandGithub className="github-icon transition-colors duration-100 group-hover:text-white" size={18} />
+                <span className="transition-colors duration-100 group-hover:text-white">View on GitHub</span>
               </a>
             </Group>
           </Stack>
