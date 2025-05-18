@@ -137,33 +137,6 @@ export const queryLatencyData = databases.map((db) => {
   };
 });
 
-// Pricing Data ($ per CPU/hour)
-export const pricingData = databases.map((db) => ({
-  ...db,
-  data: [
-    {
-      cpu: "1 CPU",
-      price: db.id === "avgdb" ? 0.015 : 0.02 + Math.random() * 0.03,
-    },
-    {
-      cpu: "2 CPU",
-      price: db.id === "avgdb" ? 0.03 : 0.04 + Math.random() * 0.06,
-    },
-    {
-      cpu: "4 CPU",
-      price: db.id === "avgdb" ? 0.06 : 0.08 + Math.random() * 0.12,
-    },
-    {
-      cpu: "8 CPU",
-      price: db.id === "avgdb" ? 0.12 : 0.16 + Math.random() * 0.24,
-    },
-    {
-      cpu: "16 CPU",
-      price: db.id === "avgdb" ? 0.24 : 0.32 + Math.random() * 0.48,
-    },
-  ],
-}));
-
 // Backup Restoration Data (minutes to restore different data sizes)
 export const backupRestorationData = databases.map((db) => {
   let data;
