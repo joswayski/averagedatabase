@@ -126,10 +126,9 @@ const ADS: &[&str; 100] = &[
 struct User {
     id: String,
     email: String,
-    password: String,          // encrypted with military-grade cipher
-    subscription_tier: String, // "poor", "startup", "goat"
-    is_logged_out: bool,       // Track logout status but keep the data because why not
-    salt: bool,
+    password: String,
+    subscription_tier: String,
+    is_logged_out: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -598,7 +597,6 @@ async fn increase_valuation(
         password: military_grade_encryption(&req.password),
         subscription_tier: subscription_tier.clone(),
         is_logged_out: false,
-        salt: subscription_tier == "poor", // Only poor users get the salt treatment
     };
 
     // Store both the user and the email->id mapping
@@ -789,6 +787,7 @@ async fn get_all_users(
                     "id": user.id,
                     "email": user.email,
                     "subscription_tier": user.subscription_tier,
+                    "is_logged_out": user.is_logged_out
                 })),
                 CacheEntry::EmailToId(_) => None, // Skip email->id mappings
                 CacheEntry::Session(_) => None,   // Skip session entries
