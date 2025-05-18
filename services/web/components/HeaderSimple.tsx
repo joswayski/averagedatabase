@@ -33,7 +33,6 @@ export function HeaderSimple() {
     const to = isHashLink
       ? (location.pathname === '/' ? link.link : `/${link.link}`)
       : link.link;
-    const shouldPrefetch = link.link === '/blog' || link.link === '/docs';
 
     return (
       <NavLink
