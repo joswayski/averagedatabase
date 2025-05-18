@@ -19,9 +19,7 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
 
         <Container size={660} p={0}>
           <Text c="dimmed" className="text-center mt-2">
-            Its lungs contain an organ that creates electricity. The crackling sound of electricity
-            can be heard when it exhales. Azurill's tail is large and bouncy. It is packed full of the
-            nutrients this Pokémon needs to grow.
+            Even our competitors. Some more than others. It's mostly good though, we sue for defamation on the rest. These are real, unpaid testimonials.
           </Text>
         </Container>
       </Container>

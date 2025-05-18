@@ -79,7 +79,9 @@ export default function Home() {
   return (
     <main className="">
       <HeaderSimple />
-      <HeroBullets />
+      <div className="bg-gradient-to-b from-stone-50 to-white">
+        <HeroBullets />
+      </div>
       <Benchmarks />
       <Testimonials testimonials={testimonials} />
       <Pricing />

@@ -22,6 +22,8 @@ export function HeaderSimple() {
   useEffect(() => {
     if (location.pathname === '/docs') {
       setActive('/docs');
+    } else if (location.pathname === '/blog' || location.pathname.startsWith('/blog/')) {
+      setActive('/blog');
     } else if (location.pathname === '/') {
       if (location.hash) {
         setActive(location.hash);
@@ -79,9 +81,9 @@ export function HeaderSimple() {
   ));
 
   return (
-    <header className="sticky top-0 z-50 h-14 mb-4 bg-stone-50 border-b border-gray-200 w-full shadow-sm">
+    <header className="sticky top-0 z-50 h-14  bg-stone-50 border-b border-gray-200 w-full shadow-sm">
       <Container size="lg" className="h-14 flex justify-between items-center">
-        <Link to="/" className="flex items-center cursor-pointer">
+        <Link to="/" className="flex items-center cursor-pointer" onClick={() => setActive('')}>
           <img src="/logo-small.png" alt="AvgDB logo small" className="h-10 w-40 object-contain mr-2" />
         </Link>
         <Group gap={5} visibleFrom="xs">

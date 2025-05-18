@@ -1,8 +1,6 @@
 import { Container, Paper, Text, Title, UnstyledButton } from '@mantine/core';
 import { HeaderSimple } from '../../../components/HeaderSimple';
-import { Blog as BlogListing } from '../../../components/Blog';
-import { Link } from 'react-router';
-import { IconArrowRight } from '@tabler/icons-react';
+import { BlogListing } from '../../../components/BlogListing';
 
 export function meta() {
   return [
@@ -13,10 +11,10 @@ export function meta() {
 
 export default function BlogIndexPage() {
   return (
-    <>
+    <div className="flex-grow">
       <Container size="lg" className="my-8"> 
         <BlogListing />
       </Container>
-    </>
+    </div>
   );
 } 

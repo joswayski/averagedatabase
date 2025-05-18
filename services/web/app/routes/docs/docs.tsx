@@ -118,7 +118,7 @@ const authEndpoints: Endpoint[] = [
   {
     method: 'POST',
     path: '/get-out',
-    description: 'Logout endpoint. Requires user_id in the request body.',
+    description: 'Logout endpoint',
     request: {
       user_id: 'random_user_id'
     },
@@ -165,7 +165,7 @@ const authEndpoints: Endpoint[] = [
   {
     method: 'POST',
     path: '/validate-session',
-    description: "Validate a session token. The x-averagedb-api-key header must contain the requester's API key. The request body should contain the token (e.g., 'user_id:random_string') received from the login endpoint.",
+    description: "Validate a session token",
     request: {
       token: 'user_id:random_string'
     },

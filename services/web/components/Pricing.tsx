@@ -87,7 +87,7 @@ export function Pricing() {
                 </CopyButton>
               </Group>
               <Text size="sm" mb="xs">Keep this key safe! You'll need it for all API requests.</Text>
-              <Text size="sm" component={Link} to="/docs" style={{ color: 'var(--mantine-color-blue-6)', textDecoration: 'underline' }}>
+              <Text size="sm" component={Link} to="/docs" className="!text-blue-600 !underline hover:!text-blue-700">
                 Click here to view the API documentation →
               </Text>
               {data.brought_to_you_by && (
@@ -186,7 +186,7 @@ export function Pricing() {
                         radius="md"
                         loading={isSubmitting}
                         disabled={isSubmitting}
-                        className="h-[42px] flex items-center justify-center"
+                        className={`h-[42px] flex items-center justify-center !bg-blue-600 hover:!bg-blue-700 !text-white ${!tier.highlighted && '!border-blue-600 hover:!bg-blue-50'}`}
                         onClick={() => setSubmittedTier(tier.name)}
                       >
                         {isSubmitting ? "Generating..." : tier.buttonText}

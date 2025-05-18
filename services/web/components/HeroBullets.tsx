@@ -25,7 +25,7 @@ const factsheet = [
 ]
 export function HeroBullets() {
   return (
-    <Container size="lg">
+    <Container size="lg" >
       <div className="flex flex-col-reverse items-center justify-center gap-8 md:flex-row md:items-center md:justify-between md:gap-15 py-16">
         <div className="max-w-6xl w-full md:mr-12 flex-1 ">
           <h1 className="text-black font-outfit text-4xl md:text-5xl font-medium leading-tight mb-4">
