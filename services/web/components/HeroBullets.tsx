@@ -33,7 +33,7 @@ export function HeroBullets() {
             The world's most <span className="relative bg-blue-100/70 rounded px-3 py-1">performant</span>, <span className="relative bg-green-100/70 rounded px-3 py-1">secure</span>, <span className="relative bg-purple-100/70 rounded px-3 py-1">scalable</span>, <span className="relative bg-orange-100/70 rounded px-3 py-1">reliable</span>, <span className="relative bg-yellow-100/70 rounded px-3 py-1">freest</span>, <span className="relative bg-rose-100/70 rounded px-3 py-1"> open source</span> data platform<br />
           </h1>
           <Text c="dimmed" mt="md">
-            AvgDB is the only database built from the ground up to meet the needs of the average developer.
+            AvgDB is the only data platform built from the ground up to meet the needs of the average developer.
           </Text>
 
           <List
