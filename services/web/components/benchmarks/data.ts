@@ -78,17 +78,33 @@ export const databases: Database[] = [
     color: "red.6",
     description: "Distributed SQL database",
   },
+  {
+    id: "turso",
+    name: "Turso",
+    color: "cyan.6",
+    description: "Edge-hosted SQLite platform",
+  },
 ];
 
 // Query Latency Data (ms)
-export const queryLatencyData = databases.map((db) => ({
-  ...db,
-  data: generateDataPoints(
-    db.id === "avgdb" ? 15 : Math.random() * 30 + 30, // Base latency
-    10, // Variance
-    db.id === "avgdb"
-  ),
-}));
+export const queryLatencyData = databases.map((db) => {
+  let baseValue;
+  let variance;
+  if (db.id === "avgdb") {
+    baseValue = 15;
+    variance = 10;
+  } else if (db.id === "planetscale") {
+    baseValue = 40; // 2nd best, a little faster
+    variance = 40;
+  } else {
+    baseValue = 90 + Math.random() * 60; // 90-150ms for others
+    variance = 60; // much larger spread
+  }
+  return {
+    ...db,
+    data: generateDataPoints(baseValue, variance, db.id === "avgdb"),
+  };
+});
 
 // Pricing Data ($ per CPU/hour)
 export const pricingData = databases.map((db) => ({

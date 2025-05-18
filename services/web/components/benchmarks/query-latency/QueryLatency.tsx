@@ -1,5 +1,5 @@
-import { AreaChart } from '@mantine/charts';
-import { Text, Stack } from '@mantine/core';
+import { AreaChart, getFilteredChartTooltipPayload } from '@mantine/charts';
+import { Text, Stack, Group, Paper } from '@mantine/core';
 import { queryLatencyData } from '../data';
 import type { QueryLatencyDataPoint } from '../types';
 import { NoDataAlert } from '../shared/NoDataAlert';
@@ -41,6 +41,34 @@ export const data = [
   },
 ];
 
+function CustomTooltip({ label, payload }: { label: string; payload: any[] }) {
+  if (!payload) return null;
+  const filtered = getFilteredChartTooltipPayload(payload);
+  return (
+    <Paper shadow="md" p="sm" radius="md">
+      <Text fw={600} mb={4}>{label}</Text>
+      {filtered.map((entry: any) => (
+        <Group key={entry.name} gap="xs" align="center">
+          <span style={{
+            display: 'inline-block',
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            background: entry.color,
+          }} />
+          <Text size="sm">
+          {entry.name}
+          </Text>
+          <Text size="sm" fw={600}>{entry.value.toFixed(2)}</Text>
+          {entry.name === 'AvgDB' && (
+            <span role="img" aria-label="fastest" title="Fastest">⚡</span>
+          )}
+        </Group>
+      ))}
+    </Paper>
+  );
+}
+
 export default function QueryLatency({ enabledDbs }: QueryLatencyProps) {
   const enabledData = queryLatencyData.filter(db => enabledDbs[db.id]);
 
@@ -78,7 +106,6 @@ export default function QueryLatency({ enabledDbs }: QueryLatencyProps) {
           name: db.name,
           color: db.color,
         }))}
-    
         curveType="step"
         tickLine="xy"
         gridAxis="x"
@@ -87,7 +114,7 @@ export default function QueryLatency({ enabledDbs }: QueryLatencyProps) {
         withTooltip={true}
         valueFormatter={(value) => value.toFixed(2)}
         tooltipProps={{
-          formatter: (value: number) => value.toFixed(2),
+          content: ({ label, payload }) => <CustomTooltip label={label} payload={payload ?? []} />,
         }}
       />
     </Stack>
