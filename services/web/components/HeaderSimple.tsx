@@ -39,7 +39,7 @@ export function HeaderSimple() {
       <NavLink
         key={link.label}
         to={to}
-        prefetch={shouldPrefetch ? "intent" : undefined}
+        prefetch={"intent"}
         onClick={(e) => {
           if (isHashLink && location.pathname === '/') {
             e.preventDefault();
