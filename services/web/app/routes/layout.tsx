@@ -1,9 +1,5 @@
 import { Outlet, useLoaderData } from "react-router";
 import { HeaderSimple } from "../../components/HeaderSimple";
-import { HeroBullets } from "../../components/HeroBullets";
-import { Testimonials } from "../../components/Testimonials";
-import { Benchmarks } from "../../components/benchmarks/Benchmarks";
-import { Pricing } from "../../components/Pricing";
 import { testimonials } from "../data/testimonials";
 import { Footer } from "components/Footer";
 
@@ -39,7 +35,8 @@ export default function Home() {
   return (
     <>
       <HeaderSimple />
-<Outlet/>
+      <Outlet/>
+      <Footer />
     </>
   );
 }

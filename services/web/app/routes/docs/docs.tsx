@@ -300,7 +300,7 @@ export default function Docs() {
   );
 
   return (
-    <Container size="xl" py="xl">
+    <Container size="xl" py="xl" className="min-h-[calc(100vh-200px)]">
       <Grid>
         {/* Sidebar */}
         <Grid.Col span={{ base: 12, md: 3 }}>

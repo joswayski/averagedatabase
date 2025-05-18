@@ -12,7 +12,6 @@ export function meta() {
 export default function WeRichLmaoBlogPost() {
   return (
     <>
-      <HeaderSimple />
       <Container size="md" className="py-10">
         <Paper shadow="sm" p={{ base: 'md', sm: 'xl' }} radius="md" withBorder className="bg-white">
           <Title order={1} className="text-3xl lg:text-4xl font-bold text-gray-900 mb-2 text-center sm:text-left">

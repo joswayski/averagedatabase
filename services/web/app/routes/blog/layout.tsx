@@ -1,11 +1,15 @@
 import { HeaderSimple } from "components/HeaderSimple";
 import { Outlet } from "react-router";
+import { Footer } from "components/Footer";
 
-export default function DocsLayout() {
+export default function BlogLayout() {
   return (
-    <div>
+    <div className="min-h-screen flex flex-col">
       <HeaderSimple />
-      <Outlet />
+      <div className="flex-1 flex flex-col">
+        <Outlet />
+      </div>
+      <Footer />
     </div>
   );
 }
