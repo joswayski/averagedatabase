@@ -1,0 +1,19 @@
+{
+  "name": "avgdb",
+  "version": "1.0.0",
+  "description": "Get an API key for Average Database",
+  "main": "index.js",
+  "bin": {
+    "avgdb": "./index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "avgdb",
+    "database",
+    "api"
+  ],
+  "author": "Average Inc",
+  "license": "MIT"
+} 
