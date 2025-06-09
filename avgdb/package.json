@@ -1,7 +1,7 @@
 {
   "name": "avgdb",
   "version": "1.0.0",
-  "description": "Get an API key for Average Database",
+  "description": "Get an API key for AvgDB",
   "main": "index.js",
   "bin": {
     "avgdb": "./index.js"
@@ -11,9 +11,8 @@
   },
   "keywords": [
     "avgdb",
-    "database",
-    "api"
+    "averagedatabase"
   ],
-  "author": "Average Inc",
+  "author": "Average Labs, LLC",
   "license": "MIT"
 } 
