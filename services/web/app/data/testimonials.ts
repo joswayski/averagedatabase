@@ -173,7 +173,7 @@ export const testimonials: Testimonial[] = [
     name: "Matt Palmer",
     handle: "mattppal",
     imageUrl:
-      "https://pbs.twimg.com/profile_images/1920296962810667008/T5bArGtK_400x400.jpg",
+      "https://pbs.twimg.com/profile_images/1937911509788856322/B7LW5vGz_400x400.jpg",
     xeet: "https://x.com/mattppal/status/1873856344249557350",
   },
   {
@@ -202,6 +202,15 @@ export const testimonials: Testimonial[] = [
     imageUrl:
       "https://pbs.twimg.com/profile_images/1632164169326936064/DYYVa-Rz_400x400.jpg",
     xeet: "https://x.com/anuraggoel/status/1809108118959501372",
+  },
+  {
+    featured: false,
+    body: `a perfect database`,
+    name: "Ben Dicken",
+    handle: "BenjDicken",
+    imageUrl:
+      "https://pbs.twimg.com/profile_images/1762619014306729984/jT9BEdMQ_400x400.jpg",
+    xeet: "https://x.com/BenjDicken/status/1940498208696025364",
   },
   {
     featured: false,
