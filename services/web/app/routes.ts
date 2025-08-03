@@ -12,5 +12,6 @@ export default [
     route("blog", "routes/blog/blog.tsx"),
     route("blog/we-rich-lmao", "routes/blog/we-rich-lmao.tsx"),
     route("blog/oops-we-did-it-again", "routes/blog/oops-we-did-it-again.tsx"),
+    route("blog/ass", "routes/blog/ass.tsx"),
   ]),
 ] satisfies RouteConfig;

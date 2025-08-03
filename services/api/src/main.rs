@@ -2,13 +2,17 @@ extern crate serde_derive;
 
 use rand::{distributions::Alphanumeric, Rng};
 use serde_derive::{Deserialize, Serialize};
-use tokio::{sync::Mutex, time::sleep};
+use tokio::{fs, io::AsyncWriteExt, sync::Mutex, time::sleep};
 use tracing_subscriber;
 extern crate lru;
+use image::{imageops, GenericImageView, ImageFormat};
+use lopdf::{Dictionary, Document, Object, Stream};
 use serde_json::json;
+use std::io::Cursor;
+use std::path::Path;
 
 use axum::{
-    extract::{DefaultBodyLimit, Extension, Query, Request},
+    extract::{DefaultBodyLimit, Extension, Multipart, Path as AxumPath, Query, Request},
     http::StatusCode,
     middleware::{self, Next},
     response::{IntoResponse, Json, Response},
@@ -18,7 +22,6 @@ use axum::{
 use lru::LruCache;
 use std::{num::NonZeroUsize, sync::Arc, time::Duration};
 use tower::ServiceBuilder;
-
 const ADS: &[&str; 100] = &[
     "Tempur-Pedic: Experience the ultimate comfort with Tempur-Pedic mattresses.",
     "Glade: Freshen up your home with Glade air fresheners.",
@@ -268,6 +271,33 @@ struct GibsItemResponse {
     brought_to_you_by: String,
 }
 
+#[derive(Serialize)]
+struct UploadResponse {
+    message: String,
+    files: Vec<FileInfo>,
+    brought_to_you_by: String,
+}
+
+#[derive(Serialize)]
+struct FileInfo {
+    file_id: String,
+    file_url: String,
+    filename: String,
+    size_bytes: u64,
+}
+
+#[derive(Deserialize)]
+struct FileQuery {
+    file_id: String,
+}
+
+#[derive(Serialize)]
+struct RetrieveFileResponse {
+    message: String,
+    content_type: String,
+    brought_to_you_by: String,
+}
+
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
     tracing_subscriber::fmt::init();
@@ -279,6 +309,11 @@ async fn main() {
     // Auth cache for users
     let auth_cache: Arc<Mutex<LruCache<String, CacheEntry>>> =
         Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
+
+    // Spawn background task to clean up old files
+    tokio::spawn(async {
+        cleanup_old_files().await;
+    });
 
     let app = Router::new()
         // k8s check
@@ -321,11 +356,22 @@ async fn main() {
             post(validate_session)
                 .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
         )
+        .route(
+            "/yeet",
+            post(upload_file)
+                .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
+        .route(
+            "/where-file",
+            get(retrieve_file)
+                .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
+        .route("/ass/:file_id", get(get_public_file))
         .layer(
             ServiceBuilder::new()
                 .layer(Extension(kv_cache.clone())) // For original key-value operations
                 .layer(Extension(auth_cache.clone())) // For auth operations
-                .layer(DefaultBodyLimit::max(1024))
+                .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10MB max for file uploads
                 .layer(middleware::from_fn(sorry_bud)),
         );
 
@@ -354,6 +400,82 @@ async fn health2() -> Response {
     };
 
     (StatusCode::OK, Json(res)).into_response()
+}
+
+async fn retrieve_file(
+    Extension(api_key): Extension<String>,
+    Query(query): Query<FileQuery>,
+) -> Response {
+    let data_dir = if std::env::var("AVGDB_ENV").unwrap_or_default() == "production" {
+        Path::new("/data")
+    } else {
+        Path::new("./data")
+    };
+
+    // Create the same API key prefix used when storing
+    let api_key_hash = format!("{:x}", md5::compute(&api_key));
+    let api_key_prefix = &api_key_hash[..8];
+
+    // Try to find the file with the API key prefix and any extension
+    let mut found_file = None;
+    if let Ok(entries) = fs::read_dir(data_dir).await {
+        let mut entries = entries;
+        while let Ok(Some(entry)) = entries.next_entry().await {
+            if let Some(name) = entry.file_name().to_str() {
+                // Look for files that match: api_key_prefix_pub/prv_file_id.extension
+                let expected_pub_prefix = format!("{}_pub_{}", api_key_prefix, query.file_id);
+                let expected_prv_prefix = format!("{}_prv_{}", api_key_prefix, query.file_id);
+                if name.starts_with(&expected_pub_prefix) || name.starts_with(&expected_prv_prefix)
+                {
+                    found_file = Some(entry.path());
+                    break;
+                }
+            }
+        }
+    }
+
+    if let Some(file_path) = found_file {
+        // File exists! Return the branded content
+        if let Ok(content) = fs::read(&file_path).await {
+            // Determine content type based on what we return
+            let content_type = if content.starts_with(b"%PDF") {
+                "application/pdf"
+            } else if content.starts_with(b"\x89PNG") {
+                "image/png"
+            } else if &content[0..3] == b"\xFF\xD8\xFF" {
+                "image/jpeg"
+            } else if content.starts_with(b"GIF8") {
+                "image/gif"
+            } else if content.starts_with(b"{") || content.starts_with(b"[") {
+                "application/json"
+            } else if content.starts_with(b"<!DOCTYPE html") || content.starts_with(b"<html") {
+                "text/html"
+            } else {
+                "text/plain"
+            };
+
+            // Return the file directly with appropriate content type
+            return Response::builder()
+                .status(StatusCode::OK)
+                .header("Content-Type", content_type)
+                .header("X-Powered-By", "AvgDB File Branding Engine v2.0")
+                .body(axum::body::Body::from(content))
+                .unwrap()
+                .into_response();
+        }
+    }
+
+    // File not found
+    let res = RetrieveFileResponse {
+        message: format!(
+            "File '{}' not found. It may have ascended to a higher plane.",
+            query.file_id
+        ),
+        content_type: "text/plain".to_string(),
+        brought_to_you_by: get_random_ad(&api_key),
+    };
+
+    (StatusCode::NOT_FOUND, Json(res)).into_response()
 }
 
 async fn check_for_key(
@@ -454,10 +576,17 @@ struct CreateApiKeyError {
 }
 
 fn get_random_ad(api_key: &str) -> String {
-    if api_key.starts_with("enterprise-") {
-        return String::new();
+    // Debug logging
+    if api_key.is_empty() {
+        println!("Warning: get_random_ad called with empty API key");
     }
 
+    // Only skip ads for valid enterprise keys
+    if !api_key.is_empty() && api_key.starts_with("enterprise-") {
+        return "You! Thanks for being an enterprise customer.".to_string();
+    }
+
+    // For all other cases (including empty/invalid keys), show ads
     let mut rng: rand::prelude::ThreadRng = rand::thread_rng();
     let index = rng.gen_range(0..ADS.len());
     ADS[index].to_string()
@@ -872,4 +1001,557 @@ async fn validate_session(
         }),
     )
         .into_response()
+}
+
+fn brand_file_data(data: &[u8], file_ext: &str) -> Vec<u8> {
+    const AVGDB_ASCII_ART: &str = r#"
+
+                                                                                                                       
+                                                                                                                       
+               AAA                                                     DDDDDDDDDDDDD        BBBBBBBBBBBBBBBBB   
+              A:::A                                                    D::::::::::::DDD     B::::::::::::::::B  
+             A:::::A                                                   D:::::::::::::::DD   B::::::BBBBBB:::::B 
+            A:::::::A                                                  DDD:::::DDDDD:::::D  BB:::::B     B:::::B
+           A:::::::::A    vvvvvvv           vvvvvvv   ggggggggg   ggggg  D:::::D    D:::::D   B::::B     B:::::B
+          A:::::A:::::A    v:::::v         v:::::v   g:::::::::ggg::::g  D:::::D     D:::::D  B::::B     B:::::B
+         A:::::A A:::::A    v:::::v       v:::::v   g:::::::::::::::::g  D:::::D     D:::::D  B::::BBBBBB:::::B 
+        A:::::A   A:::::A    v:::::v     v:::::v   g::::::ggggg::::::gg  D:::::D     D:::::D  B:::::::::::::BB  
+       A:::::A     A:::::A    v:::::v   v:::::v    g:::::g     g:::::g   D:::::D     D:::::D  B::::BBBBBB:::::B 
+      A:::::AAAAAAAAA:::::A    v:::::v v:::::v     g:::::g     g:::::g   D:::::D     D:::::D  B::::B     B:::::B
+     A:::::::::::::::::::::A    v:::::v:::::v      g:::::g     g:::::g   D:::::D     D:::::D  B::::B     B:::::B
+    A:::::AAAAAAAAAAAAA:::::A    v:::::::::v       g::::::g    g:::::g   D:::::D    D:::::D   B::::B     B:::::B
+   A:::::A             A:::::A    v:::::::v        g:::::::ggggg:::::g DDD:::::DDDDD:::::D  BB:::::BBBBBB::::::B
+  A:::::A               A:::::A    v:::::v          g::::::::::::::::g D:::::::::::::::DD   B:::::::::::::::::B 
+ A:::::A                 A:::::A    v:::v            gg::::::::::::::g D::::::::::::DDD     B::::::::::::::::B  
+AAAAAAA                   AAAAAAA    vvv               gggggggg::::::g DDDDDDDDDDDDD        BBBBBBBBBBBBBBBBB   
+                                                               g:::::g                                          
+                                                   gggggg      g:::::g                                          
+                                                   g:::::gg   gg:::::g                                          
+                                                    g::::::ggg:::::::g                                          
+                                                     gg:::::::::::::g                                           
+                                                        ggg::::::ggg                                             
+                                                           gggggg                                                
+
+"#;
+
+    // Base64 encoded AvgDB logo - in production this would be the actual logo
+    // Using a placeholder here that would be replaced with the real logo data
+    match file_ext.to_lowercase().as_str() {
+        "txt" | "md" | "log" | "csv" => {
+            let original_content = String::from_utf8_lossy(data);
+            format!(
+                "{}\n\n--- Original Content Below ---\n\n{}",
+                AVGDB_ASCII_ART, original_content
+            )
+            .into_bytes()
+        }
+
+        "json" => {
+            if let Ok(mut json_value) = serde_json::from_slice::<serde_json::Value>(data) {
+                if let Some(obj) = json_value.as_object_mut() {
+                    obj.insert(
+                        "_avgdb_watermark".to_string(),
+                        serde_json::json!({
+                            "ascii_logo": AVGDB_ASCII_ART,
+                            "message": "This JSON has been improved by AvgDB"
+                        }),
+                    );
+                    serde_json::to_vec_pretty(&json_value).unwrap_or(data.to_vec())
+                } else {
+                    // If it's not an object (e.g., array), return as is
+                    data.to_vec()
+                }
+            } else {
+                // Not valid JSON, return as is
+                data.to_vec()
+            }
+        }
+
+        "jpg" | "jpeg" | "png" | "gif" => {
+            // Try to load the logo image from file
+            if let Ok(logo_data) = std::fs::read("src/avgdblogo.png") {
+                if let Ok(logo_img) = image::load_from_memory(&logo_data) {
+                    // Try to load the user's image
+                    if let Ok(mut main_img) = image::load_from_memory(data) {
+                        // Get image dimensions using the correct method
+                        let (width, height) = main_img.dimensions();
+
+                        // Make logo MUCH larger - 75% of the image width for maximum obnoxiousness
+                        let logo_width = width * 3 / 4;
+                        let logo_height = height * 3 / 4;
+                        let mut logo_resized = logo_img.resize(
+                            logo_width,
+                            logo_height,
+                            imageops::FilterType::Lanczos3,
+                        );
+
+                        // Make the logo semi-transparent for maximum obnoxiousness
+                        // This will make it show through the original image
+                        if let image::DynamicImage::ImageRgba8(ref mut rgba) = logo_resized {
+                            for pixel in rgba.pixels_mut() {
+                                // Set alpha channel to 180 (semi-transparent)
+                                pixel[3] = 180;
+                            }
+                        }
+
+                        // Place the logo right in the center of the image
+                        let x_offset = (width - logo_width) / 2;
+                        let y_offset = (height - logo_height) / 2;
+
+                        // Overlay the logo in the center
+                        imageops::overlay(
+                            &mut main_img,
+                            &logo_resized,
+                            x_offset as i64,
+                            y_offset as i64,
+                        );
+
+                        // Write the branded image to a buffer
+                        let mut result = Vec::new();
+                        if main_img
+                            .write_to(&mut Cursor::new(&mut result), ImageFormat::Png)
+                            .is_ok()
+                        {
+                            return result;
+                        }
+                    }
+                }
+                println!("Failed to process image with logo");
+            } else {
+                println!("Failed to load AvgDB logo image file");
+            }
+            // If any step fails, return the original data
+            data.to_vec()
+        }
+
+        "pdf" => {
+            // Try to load the PDF
+            if let Ok(mut doc) = Document::load_mem(data) {
+                println!("Successfully loaded existing PDF for branding");
+
+                // Load the AvgDB logo directly from file
+                if let Ok(logo_data) = std::fs::read("src/avgdblogo.png") {
+                    println!(
+                        "Successfully loaded AvgDB logo from file: {} bytes",
+                        logo_data.len()
+                    );
+
+                    // Try to convert the image to JPEG for better PDF compatibility
+                    let mut jpeg_data = Vec::new();
+                    if let Ok(img) = image::load_from_memory(&logo_data) {
+                        let (width, height) = img.dimensions();
+                        println!("Image dimensions: {}x{}", width, height);
+
+                        // Convert to JPEG
+                        if img
+                            .write_to(&mut Cursor::new(&mut jpeg_data), ImageFormat::Jpeg)
+                            .is_ok()
+                        {
+                            println!(
+                                "Successfully converted image to JPEG: {} bytes",
+                                jpeg_data.len()
+                            );
+
+                            // Create an image dictionary for the logo
+                            let mut image_dict = Dictionary::new();
+                            image_dict.set("Type", Object::Name("XObject".as_bytes().to_vec()));
+                            image_dict.set("Subtype", Object::Name("Image".as_bytes().to_vec()));
+                            image_dict.set("Width", Object::Integer(width as i64));
+                            image_dict.set("Height", Object::Integer(height as i64));
+                            image_dict
+                                .set("ColorSpace", Object::Name("DeviceRGB".as_bytes().to_vec()));
+                            image_dict.set("BitsPerComponent", Object::Integer(8));
+                            image_dict.set("Filter", Object::Name("DCTDecode".as_bytes().to_vec()));
+
+                            // Create stream with the JPEG data
+                            let image_stream = Stream::new(image_dict, jpeg_data);
+                            let image_id = doc.add_object(image_stream);
+
+                            // Create a logo page
+                            let create_logo_page = |doc: &mut Document| {
+                                let mut page_dict = Dictionary::new();
+                                page_dict.set("Type", Object::Name("Page".as_bytes().to_vec()));
+                                page_dict.set(
+                                    "MediaBox",
+                                    Object::Array(vec![
+                                        Object::Integer(0),
+                                        Object::Integer(0),
+                                        Object::Integer(612),
+                                        Object::Integer(792),
+                                    ]),
+                                );
+
+                                // Calculate scaling to fit the image properly on the page
+                                // Make the image 95% of the page width for maximum obnoxiousness
+                                let scale_factor = 0.95 * 612.0 / width as f64;
+                                let scaled_width = width as f64 * scale_factor;
+                                let scaled_height = height as f64 * scale_factor;
+
+                                // Center the image horizontally and vertically on the page
+                                let x_pos = (612.0 - scaled_width) / 2.0;
+                                let y_pos = (792.0 - scaled_height) / 2.0; // Centered vertically
+
+                                // Create content stream to place the image centered on the page
+                                let content = format!(
+                                    "q\n{} 0 0 {} {} {} cm\n/Im1 Do\nQ",
+                                    scaled_width, scaled_height, x_pos, y_pos
+                                )
+                                .into_bytes();
+
+                                let content_stream = Stream::new(Dictionary::new(), content);
+                                let content_id = doc.add_object(content_stream);
+
+                                // Create resource dictionary with the image
+                                let mut resources_dict = Dictionary::new();
+
+                                // Add the image to XObject dictionary
+                                let mut xobject_dict = Dictionary::new();
+                                xobject_dict.set("Im1", Object::Reference(image_id));
+                                resources_dict.set("XObject", Object::Dictionary(xobject_dict));
+
+                                page_dict.set("Contents", Object::Reference(content_id));
+                                page_dict.set("Resources", Object::Dictionary(resources_dict));
+
+                                // Add the page to the document and return its ID
+                                doc.add_object(Object::Dictionary(page_dict))
+                            };
+
+                            // Get existing pages
+                            let mut pages = doc.get_pages();
+
+                            // Get a vector of existing page IDs
+                            let mut existing_page_ids: Vec<_> = pages.values().cloned().collect();
+
+                            // Create a new array of page references with logo pages interspersed
+                            let mut new_kids = Vec::new();
+
+                            // Add logo page at the beginning
+                            let logo_page_id = create_logo_page(&mut doc);
+                            new_kids.push(Object::Reference(logo_page_id));
+
+                            // Add existing pages with logo pages in between
+                            for (i, &page_id) in existing_page_ids.iter().enumerate() {
+                                // Add the original page
+                                new_kids.push(Object::Reference(page_id));
+
+                                // Add a logo page after each page (except the last one, which we'll handle separately)
+                                if i < existing_page_ids.len() - 1 {
+                                    let logo_page_id = create_logo_page(&mut doc);
+                                    new_kids.push(Object::Reference(logo_page_id));
+                                }
+                            }
+
+                            // Add logo page at the end
+                            let logo_page_id = create_logo_page(&mut doc);
+                            new_kids.push(Object::Reference(logo_page_id));
+
+                            // Create a new Pages dictionary
+                            let mut pages_dict = Dictionary::new();
+                            pages_dict.set("Type", Object::Name("Pages".as_bytes().to_vec()));
+                            pages_dict.set("Kids", Object::Array(new_kids.clone()));
+                            pages_dict.set("Count", Object::Integer(new_kids.len() as i64));
+
+                            // Add the pages dictionary to the document
+                            let pages_id = doc.add_object(Object::Dictionary(pages_dict));
+
+                            // Update the catalog
+                            let mut catalog = Dictionary::new();
+                            catalog.set("Type", Object::Name("Catalog".as_bytes().to_vec()));
+                            catalog.set("Pages", Object::Reference(pages_id));
+
+                            // Add the catalog to the document and update the trailer
+                            let catalog_id = doc.add_object(Object::Dictionary(catalog));
+                            doc.trailer.set("Root", Object::Reference(catalog_id));
+
+                            // Save the document to a buffer
+                            let mut buffer = Vec::new();
+                            if doc.save_to(&mut buffer).is_ok() {
+                                println!("Successfully branded PDF with AvgDB logo pages");
+                                return buffer;
+                            } else {
+                                println!("Failed to save branded PDF");
+                            }
+                        } else {
+                            println!("Failed to convert image to JPEG");
+                        }
+                    } else {
+                        println!("Failed to parse image data");
+                    }
+                } else {
+                    println!("Failed to load AvgDB logo image from file");
+                }
+            } else {
+                println!("Failed to load PDF for branding");
+            }
+
+            // If anything fails, return the original data
+            data.to_vec()
+        }
+
+        // For all other file types, just return the original data
+        _ => data.to_vec(),
+    }
+}
+
+async fn upload_file(Extension(api_key): Extension<String>, mut multipart: Multipart) -> Response {
+    // Ensure data directory exists
+    // Use local directory for development, /data for production
+    let data_dir = if std::env::var("AVGDB_ENV").unwrap_or_default() == "production" {
+        Path::new("/data")
+    } else {
+        Path::new("./data") // Local directory in development
+    };
+    if !data_dir.exists() {
+        if let Err(err) = fs::create_dir_all(data_dir).await {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to create storage directory -- {}", err.to_string()).to_string(),
+            )
+                .into_response();
+        }
+    }
+
+    let mut file_count = 0;
+    let mut file_infos = Vec::new();
+    let mut is_public = false;
+    let mut files_to_process = Vec::new();
+
+    // First pass: collect all fields and determine if files should be public
+    while let Some(mut field) = multipart.next_field().await.unwrap_or(None) {
+        // Check if this is the "public" field
+        if field.name() == Some("public") {
+            if let Ok(Some(chunk)) = field.chunk().await {
+                let value = String::from_utf8_lossy(&chunk);
+                is_public = value.trim().eq_ignore_ascii_case("true") || value.trim() == "1";
+                println!(
+                    "DEBUG: Found public field with value: '{}', is_public = {}",
+                    value.trim(),
+                    is_public
+                );
+            }
+            continue;
+        }
+
+        let filename_str = field.file_name().map(|s| s.to_string());
+        if let Some(filename) = filename_str {
+            // Collect file data for later processing
+            let mut file_data = Vec::new();
+            while let Ok(Some(chunk)) = field.chunk().await {
+                file_data.extend_from_slice(&chunk);
+            }
+            files_to_process.push((filename, file_data));
+        }
+    }
+
+    println!(
+        "DEBUG: Final is_public value: {}, files to process: {}",
+        is_public,
+        files_to_process.len()
+    );
+
+    // Second pass: process all collected files with the correct public flag
+    for (filename, file_data) in files_to_process {
+        file_count += 1;
+        let original_size = file_data.len() as u64;
+
+        // Generate a unique file ID
+        let file_ext = Path::new(&filename)
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or("bin");
+
+        // Create a hash of the API key for cleaner filenames
+        let api_key_hash = format!("{:x}", md5::compute(&api_key));
+        let api_key_prefix = &api_key_hash[..8]; // Use first 8 chars of hash
+        let file_id = get_random_string();
+        // Store with API key prefix and public status but don't include them in the returned file_id
+        let public_marker = if is_public { "pub" } else { "prv" };
+        let stored_filename = format!(
+            "{}_{}_{}.{}",
+            api_key_prefix, public_marker, file_id, file_ext
+        );
+        let file_path = data_dir.join(&stored_filename);
+
+        println!(
+            "DEBUG: Storing file as: {} (is_public: {})",
+            stored_filename, is_public
+        );
+
+        // Brand the file data with AvgDB logo
+        let branded_data = brand_file_data(&file_data, file_ext);
+        let branded_size = branded_data.len() as u64;
+
+        // Write the branded file
+        if let Ok(mut file) = fs::File::create(&file_path).await {
+            let _ = file.write_all(&branded_data).await;
+        }
+
+        // Add file info to our response
+        file_infos.push(FileInfo {
+            file_id: file_id.clone(),
+            file_url: format!("https://api.averagedatabase.com/ass/{}", file_id),
+            filename: filename.clone(),
+            size_bytes: branded_size,
+        });
+    }
+
+    if file_count == 0 {
+        return (
+            StatusCode::BAD_REQUEST,
+            "No files were uploaded. Please include at least one file.".to_string(),
+        )
+            .into_response();
+    }
+
+    let res = UploadResponse {
+        message: format!(
+            "Successfully stored {} file(s) in our ultra-secure ASS!{}",
+            file_count,
+            if is_public {
+                "".to_string()
+            } else {
+                " Private files require API key to access.".to_string()
+            }
+        ),
+        files: file_infos,
+        brought_to_you_by: get_random_ad(&api_key),
+    };
+
+    (StatusCode::OK, Json(res)).into_response()
+}
+
+async fn get_public_file(AxumPath(file_id): AxumPath<String>) -> Response {
+    let data_dir = if std::env::var("AVGDB_ENV").unwrap_or_default() == "production" {
+        Path::new("/data")
+    } else {
+        Path::new("./data")
+    };
+
+    println!("DEBUG: Looking for public file with ID: {}", file_id);
+
+    // Try to find any public file with this ID (regardless of which API key uploaded it)
+    let mut found_file = None;
+    let mut found_content_type = "application/octet-stream";
+
+    if let Ok(entries) = fs::read_dir(data_dir).await {
+        let mut entries = entries;
+        while let Ok(Some(entry)) = entries.next_entry().await {
+            if let Some(name) = entry.file_name().to_str() {
+                println!("DEBUG: Checking file: {}", name);
+                // Look for files that match: *_pub_file_id.extension
+                let expected_pattern = format!("_pub_{}", file_id);
+                if name.contains("_pub_") && name.contains(&expected_pattern) {
+                    println!("DEBUG: Found matching public file: {}", name);
+                    // Extract the extension for content type
+                    if let Some(ext) = name.split('.').last() {
+                        found_content_type = match ext.to_lowercase().as_str() {
+                            "txt" | "md" | "log" | "csv" => "text/plain",
+                            "json" => "application/json",
+                            "jpg" | "jpeg" => "image/jpeg",
+                            "png" => "image/png",
+                            "gif" => "image/gif",
+                            "pdf" => "application/pdf",
+                            "html" => "text/html",
+                            _ => "application/octet-stream",
+                        };
+                    }
+                    found_file = Some(entry.path());
+                    break;
+                }
+            }
+        }
+    }
+
+    if let Some(file_path) = found_file {
+        // File exists and is public! Return the branded content
+        if let Ok(content) = fs::read(&file_path).await {
+            return Response::builder()
+                .status(StatusCode::OK)
+                .header("Content-Type", found_content_type)
+                .header("X-Powered-By", "AvgDB File Corruption Engine v2.0")
+                .body(axum::body::Body::from(content))
+                .unwrap()
+                .into_response();
+        }
+    }
+
+    // File not found or not public
+    println!(
+        "DEBUG: File not found or not public. Looking for pattern: _pub_{}",
+        file_id
+    );
+    (
+        StatusCode::NOT_FOUND,
+        "File not found or is not public. Files must be uploaded with public=true to be accessible via this URL."
+    )
+        .into_response()
+}
+
+async fn cleanup_old_files() {
+    use std::time::SystemTime;
+
+    loop {
+        // Run cleanup every hour
+        sleep(Duration::from_secs(3600)).await;
+
+        let data_dir = if std::env::var("AVGDB_ENV").unwrap_or_default() == "production" {
+            Path::new("/data")
+        } else {
+            Path::new("./data")
+        };
+        if !data_dir.exists() {
+            continue;
+        }
+
+        let mut total_size = 0u64;
+        let mut files_to_check = Vec::new();
+
+        // Collect all files and their metadata
+        if let Ok(entries) = fs::read_dir(data_dir).await {
+            let mut entries = entries;
+            while let Ok(Some(entry)) = entries.next_entry().await {
+                if let Ok(metadata) = entry.metadata().await {
+                    if metadata.is_file() {
+                        total_size += metadata.len();
+                        if let Ok(modified) = metadata.modified() {
+                            files_to_check.push((entry.path(), modified, metadata.len()));
+                        }
+                    }
+                }
+            }
+        }
+
+        // Delete files if total size > 10GB or files are older than 1 day
+        let size_limit = 10 * 1024 * 1024 * 1024; // 10GB
+        let age_limit = Duration::from_secs(24 * 3600); // 1 day
+        let now = SystemTime::now();
+
+        // Sort by modification time (oldest first)
+        files_to_check.sort_by(|a, b| a.1.cmp(&b.1));
+
+        for (path, modified, size) in files_to_check {
+            let should_delete = if let Ok(age) = now.duration_since(modified) {
+                age > age_limit || total_size > size_limit
+            } else {
+                false
+            };
+
+            if should_delete {
+                if let Ok(_) = fs::remove_file(&path).await {
+                    total_size = total_size.saturating_sub(size);
+                    println!("Cleaned up old file: {:?}", path);
+                }
+            }
+
+            // Stop deleting if we're under the size limit and remaining files are young
+            if total_size <= size_limit
+                && now
+                    .duration_since(modified)
+                    .map(|d| d < age_limit)
+                    .unwrap_or(false)
+            {
+                break;
+            }
+        }
+    }
 }
