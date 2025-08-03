@@ -1,7 +1,26 @@
-import { useState, useEffect } from 'react';
-import { Container, Title, Text, Paper, Code, Stack, Group, Badge, Divider, Box, Grid, Accordion } from '@mantine/core';
-import { IconBrandGithub, IconDatabase, IconLock, IconChevronRight } from '@tabler/icons-react';
-import { useLocation } from 'react-router';
+import { useState, useEffect } from "react";
+import {
+  Container,
+  Title,
+  Text,
+  Paper,
+  Code,
+  Stack,
+  Group,
+  Badge,
+  Divider,
+  Box,
+  Grid,
+  Accordion,
+} from "@mantine/core";
+import {
+  IconBrandGithub,
+  IconDatabase,
+  IconLock,
+  IconChevronRight,
+  IconTrash,
+} from "@tabler/icons-react";
+import { useLocation } from "react-router";
 
 // Import ads from main.rs
 const ADS = [
@@ -23,178 +42,229 @@ function getRandomAd() {
 }
 
 type Endpoint = {
-  method: 'GET' | 'POST';
+  method: "GET" | "POST";
   path: string;
   description: string;
   request: null | string | Record<string, any>;
-  response: Record<string, any>;
-  category: 'database' | 'auth';
+  response: Record<string, any> | string;
+  category: "database" | "auth" | "storage";
 };
 
 const databaseEndpoints: Endpoint[] = [
   {
-    method: 'GET',
-    path: '/u-up',
-    description: 'Health check endpoint',
+    method: "GET",
+    path: "/u-up",
+    description: "Health check endpoint",
     request: null,
     response: {
-      message: 'Yeah',
-      brought_to_you_by: getRandomAd()
+      message: "Yeah",
+      brought_to_you_by: getRandomAd(),
     },
-    category: 'database'
+    category: "database",
   },
   {
-    method: 'POST',
-    path: '/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item',
-    description: 'Add an item to the database',
+    method: "POST",
+    path: "/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
+    description: "Add an item to the database",
     request: {
-      data: 'add your data here'
+      data: "add your data here",
     },
     response: {
-      message: 'Great success!',
-      key: '442104:m0OSzCNyCifpj3mAHGUd',
-      brought_to_you_by: getRandomAd()
+      message: "Great success!",
+      key: "442104:m0OSzCNyCifpj3mAHGUd",
+      brought_to_you_by: getRandomAd(),
     },
-    category: 'database'
+    category: "database",
   },
   {
-    method: 'GET',
-    path: '/gibs-item',
-    description: 'Retrieve an item from the database',
-    request: '?key=442104:m0OSzCNyCifpj3mAHGUd',
+    method: "GET",
+    path: "/gibs-item",
+    description: "Retrieve an item from the database",
+    request: "?key=442104:m0OSzCNyCifpj3mAHGUd",
     response: {
-      value: 'add your data here',
-      brought_to_you_by: getRandomAd()
+      value: "add your data here",
+      brought_to_you_by: getRandomAd(),
     },
-    category: 'database'
+    category: "database",
   },
   {
-    method: 'POST',
-    path: '/gibs-key',
-    description: 'Get a new API key',
+    method: "POST",
+    path: "/gibs-key",
+    description: "Get a new API key",
     request: null,
     response: {
-      api_key: '123456',
-      brought_to_you_by: getRandomAd()
+      api_key: "123456",
+      brought_to_you_by: getRandomAd(),
     },
-    category: 'database'
-  }
+    category: "database",
+  },
 ];
 
 const authEndpoints: Endpoint[] = [
   {
-    method: 'POST',
-    path: '/increase-valuation',
-    description: 'Create a new user',
+    method: "POST",
+    path: "/increase-valuation",
+    description: "Create a new user",
     request: {
-      email: 'user@example.com',
-      password: 'password',
-      subscription_tier: 'poor'
+      email: "user@example.com",
+      password: "password",
+      subscription_tier: "poor",
     },
     response: {
-      message: 'User Created!',
-      user_id: 'random_user_id',
-      subscription_tier: 'poor',
-      brought_to_you_by: getRandomAd()
+      message: "User Created!",
+      user_id: "random_user_id",
+      subscription_tier: "poor",
+      brought_to_you_by: getRandomAd(),
     },
-    category: 'auth'
+    category: "auth",
   },
   {
-    method: 'POST',
-    path: '/let-me-in',
-    description: 'Login endpoint',
+    method: "POST",
+    path: "/let-me-in",
+    description: "Login endpoint",
     request: {
-      email: 'user@example.com',
-      password: 'password'
+      email: "user@example.com",
+      password: "password",
     },
     response: {
-      message: 'Login successful! Don\'t share this session token with anyone!',
-      token: 'user_id:random_string',
+      message: "Login successful! Don't share this session token with anyone!",
+      token: "user_id:random_string",
       expires_at: 1234567890,
-      brought_to_you_by: getRandomAd()
+      brought_to_you_by: getRandomAd(),
     },
-    category: 'auth'
+    category: "auth",
   },
   {
-    method: 'POST',
-    path: '/get-out',
-    description: 'Logout endpoint',
+    method: "POST",
+    path: "/get-out",
+    description: "Logout endpoint",
     request: {
-      user_id: 'random_user_id'
+      user_id: "random_user_id",
     },
     response: {
-      message: 'Successfully logged out!',
-      brought_to_you_by: getRandomAd()
+      message: "Successfully logged out!",
+      brought_to_you_by: getRandomAd(),
     },
-    category: 'auth'
+    category: "auth",
   },
   {
-    method: 'GET',
-    path: '/gibs-user',
-    description: 'Get user information',
-    request: '?user_id=random_user_id',
+    method: "GET",
+    path: "/gibs-user",
+    description: "Get user information",
+    request: "?user_id=random_user_id",
     response: {
       user: {
-        id: 'random_user_id',
-        email: 'user@example.com',
-        subscription_tier: 'poor',
-        is_logged_out: false
+        id: "random_user_id",
+        email: "user@example.com",
+        subscription_tier: "poor",
+        is_logged_out: false,
       },
-      brought_to_you_by: getRandomAd()
+      brought_to_you_by: getRandomAd(),
     },
-    category: 'auth'
+    category: "auth",
   },
   {
-    method: 'GET',
-    path: '/gibs-all-users',
-    description: 'Get all users in organization',
+    method: "GET",
+    path: "/gibs-all-users",
+    description: "Get all users in organization",
     request: null,
     response: {
       users: [
         {
-          id: 'random_user_id',
-          email: 'user@example.com',
-          subscription_tier: 'poor'
-        }
+          id: "random_user_id",
+          email: "user@example.com",
+          subscription_tier: "poor",
+        },
       ],
       brought_to_you_by: getRandomAd(),
-      message: 'If you\'re exporting your data to roll your own auth you gotta pay $1,000 per user you export'
+      message:
+        "If you're exporting your data to roll your own auth you gotta pay $1,000 per user you export",
     },
-    category: 'auth'
+    category: "auth",
   },
   {
-    method: 'POST',
-    path: '/validate-session',
+    method: "POST",
+    path: "/validate-session",
     description: "Validate a session token",
     request: {
-      token: 'user_id:random_string'
+      token: "user_id:random_string",
     },
     response: {
       is_valid: true,
-      user_id: 'random_user_id',
+      user_id: "random_user_id",
       expires_at: 1234567890,
-      message: 'Session is valid',
-      brought_to_you_by: getRandomAd()
+      message: "Session is valid",
+      brought_to_you_by: getRandomAd(),
     },
-    category: 'auth'
-  }
+    category: "auth",
+  },
 ];
 
-const allEndpoints = [...databaseEndpoints, ...authEndpoints];
+const storageEndpoints: Endpoint[] = [
+  {
+    method: "POST",
+    path: "/yeet",
+    description:
+      "Upload files to our ultra-secure storage ASS. Public files can be accessed at: https://api.averagedatabase.com/ass/{file_id}",
+    request:
+      "multipart/form-data with file field(s) and optional public=true/false",
+    response: {
+      message: "Successfully stored 2 file(s) in our ultra-secure ASS!",
+      files: [
+        {
+          file_id: "m0OSzCNyCifpj3mAHGUd",
+          file_url: "https://api.averagedatabase.com/ass/m0OSzCNyCifpj3mAHGUd",
+          filename: "document.pdf",
+          size_bytes: 1048576,
+        },
+        {
+          file_id: "a1BCdefGHIjkLMnoPQr",
+          file_url: "https://api.averagedatabase.com/ass/a1BCdefGHIjkLMnoPQr",
+          filename: "image.jpg",
+          size_bytes: 1048576,
+        },
+      ],
+      brought_to_you_by: getRandomAd(),
+    },
+    category: "storage",
+  },
+  {
+    method: "GET",
+    path: "/ass/:file_id",
+    description:
+      "Retrieve files from ASS. Public files don't require an API key, and private files can only be retrieved by the API key that uploaded it.",
+    request: "Replace :file_id with your file ID",
+    response: "Your file will be returned here!",
+    category: "storage",
+  },
+];
+
+const allEndpoints = [
+  ...databaseEndpoints,
+  ...authEndpoints,
+  ...storageEndpoints,
+];
 
 const categories = [
-  { 
-    label: 'Database', 
+  {
+    label: "Database",
     icon: IconDatabase,
     endpoints: databaseEndpoints,
-    description: 'Core database operations for storing and retrieving data'
+    description: "Core database operations for storing and retrieving data",
   },
-  { 
-    label: 'Authentication', 
+  {
+    label: "Authentication",
     icon: IconLock,
     endpoints: authEndpoints,
-    description: 'User management, authentication, and session handling'
-  }
+    description: "User management, authentication, and session handling",
+  },
+  {
+    label: "Storage (ASS)",
+    icon: IconTrash,
+    endpoints: storageEndpoints,
+    description:
+      "Average Storage Service (ASS) - State-of-the-art object storage",
+  },
 ] as const;
 
 export function meta() {
@@ -208,21 +278,18 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
   return (
     <Paper p="md" withBorder>
       <Stack gap="md">
-
         {endpoint.request && (
           <>
             <Divider label="Request" labelPosition="left" />
             <Code block>
-              {typeof endpoint.request === 'string' 
-                ? endpoint.request 
+              {typeof endpoint.request === "string"
+                ? endpoint.request
                 : JSON.stringify(endpoint.request, null, 2)}
             </Code>
           </>
         )}
         <Divider label="Response" labelPosition="left" />
-        <Code block>
-          {JSON.stringify(endpoint.response, null, 2)}
-        </Code>
+        <Code block>{JSON.stringify(endpoint.response, null, 2)}</Code>
       </Stack>
     </Paper>
   );
@@ -236,7 +303,7 @@ export default function Docs() {
   useEffect(() => {
     const hash = location.hash.slice(1); // Remove the # from the hash
     if (hash) {
-      const endpoint = allEndpoints.find(e => e.path === `/${hash}`);
+      const endpoint = allEndpoints.find((e) => e.path === `/${hash}`);
       if (endpoint) {
         setSelectedEndpoint(endpoint.path);
       }
@@ -251,7 +318,9 @@ export default function Docs() {
     window.location.hash = path.slice(1); // Remove the leading slash
   };
 
-  const currentEndpoint = allEndpoints.find(e => e.path === selectedEndpoint) || databaseEndpoints[0];
+  const currentEndpoint =
+    allEndpoints.find((e) => e.path === selectedEndpoint) ||
+    databaseEndpoints[0];
 
   const renderEndpointButton = (endpoint: Endpoint) => (
     <Box
@@ -259,16 +328,15 @@ export default function Docs() {
       component="button"
       onClick={() => handleEndpointClick(endpoint.path)}
       className={`w-full px-4 py-2 text-left rounded-md transition-colors duration-150 cursor-pointer flex items-center
-        ${selectedEndpoint === endpoint.path 
-          ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' 
-          : 'hover:bg-gray-50 active:bg-gray-100'}`}
+        ${
+          selectedEndpoint === endpoint.path
+            ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
+            : "hover:bg-gray-50 active:bg-gray-100"
+        }`}
     >
       <div className="flex items-center w-full min-w-0">
         <div className="w-16 flex-shrink-0 flex justify-center">
-          <Badge 
-            color={endpoint.method === 'GET' ? 'green' : 'blue'}
-            size="sm"
-          >
+          <Badge color={endpoint.method === "GET" ? "green" : "blue"} size="sm">
             {endpoint.method}
           </Badge>
         </div>
@@ -288,7 +356,9 @@ export default function Docs() {
           <div key={category.label}>
             <Group className="mb-2">
               <CategoryIcon size={18} stroke={1.5} />
-              <Text size="sm" fw={700}>{category.label}</Text>
+              <Text size="sm" fw={700}>
+                {category.label}
+              </Text>
             </Group>
             <Stack gap={2}>
               {category.endpoints.map(renderEndpointButton)}
@@ -306,9 +376,7 @@ export default function Docs() {
         <Grid.Col span={{ base: 12, md: 3 }}>
           <Paper p="md" withBorder className="sticky top-8">
             {/* Desktop view */}
-            <div className="hidden md:block">
-              {sidebarContent}
-            </div>
+            <div className="hidden md:block">{sidebarContent}</div>
 
             {/* Mobile view */}
             <div className="block md:hidden">
@@ -320,7 +388,9 @@ export default function Docs() {
                       <Accordion.Control>
                         <Group>
                           <CategoryIcon size={18} stroke={1.5} />
-                          <Text size="sm" fw={700}>{category.label}</Text>
+                          <Text size="sm" fw={700}>
+                            {category.label}
+                          </Text>
                         </Group>
                       </Accordion.Control>
                       <Accordion.Panel>
@@ -340,53 +410,101 @@ export default function Docs() {
         <Grid.Col span={{ base: 12, md: 9 }}>
           <Stack gap="xl">
             <div>
-              <Title order={1} mb="md">API Documentation</Title>
+              <Title order={1} mb="md">
+                API Documentation
+              </Title>
               <Text size="lg" mb="md">
-                Send requests to <Code>https://api.averagedatabase.com</Code> with the header <Code>x-averagedb-api-key</Code> containing your API key.
+                Send requests to <Code>https://api.averagedatabase.com</Code>{" "}
+                with the header <Code>x-averagedb-api-key</Code> containing your
+                API key.
               </Text>
               <Text size="lg" mb="md">
-                Enterprise customers can bring their own API keys! Simply insert any items with whatever key that you want prefixed with <Code>enterprise-</Code>
+                Enterprise customers can bring their own API keys! Simply insert
+                any items with whatever key that you want prefixed with{" "}
+                <Code>enterprise-</Code>
               </Text>
             </div>
 
             <div>
               <Group mb="md">
                 <div className="w-20">
-                  <Badge 
-                    color={currentEndpoint.method === 'GET' ? 'green' : 'blue'}
+                  <Badge
+                    color={currentEndpoint.method === "GET" ? "green" : "blue"}
                     size="lg"
                     fullWidth
                   >
                     {currentEndpoint.method}
                   </Badge>
                 </div>
-                <Title order={2} className="break-all">{currentEndpoint.path}</Title>
+                <Title order={2} className="break-all">
+                  {currentEndpoint.path}
+                </Title>
               </Group>
-              <Text mb="xl" c="dimmed">{currentEndpoint.description}</Text>
+              <Text mb="xl" c="dimmed">
+                {currentEndpoint.description}
+              </Text>
 
               <EndpointCard endpoint={currentEndpoint} />
-            </div>
 
-            <Group justify="center" mt="xl">
-              <a
-                href="https://github.com/joswayski/averagedatabase"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="github-btn group flex items-center gap-2 text-inherit no-underline text-gray-500 hover:bg-[#24292f] transition-colors duration-100"
-                style={{
-                  fontSize: '0.95rem',
-                  borderRadius: '6px',
-                  padding: '0.5rem 1rem',
-                  outline: '2px solid #24292f',
-                }}
-              >
-                <IconBrandGithub className="github-icon transition-colors duration-100 group-hover:text-white" size={18} />
-                <span className="transition-colors duration-100 group-hover:text-white">View on GitHub</span>
-              </a>
-            </Group>
+              {currentEndpoint.path === "/yeet" && (
+                <Paper p="md" withBorder mt="md">
+                  <Stack gap="md">
+                    <Divider label="Example Usage" labelPosition="left" />
+                    <Code block>
+                      {`# Upload a single PRIVATE file (default)
+curl -X POST https://api.averagedatabase.com/yeet \\
+  -H "x-averagedb-api-key: YOUR_API_KEY" \\
+  -F "file=@/path/to/your/file.pdf"
+
+# Upload a PUBLIC file (accessible without API key)
+curl -X POST https://api.averagedatabase.com/yeet \\
+  -H "x-averagedb-api-key: YOUR_API_KEY" \\
+  -F "public=true" \\
+  -F "file=@/path/to/your/file.pdf"
+
+# Upload multiple files (all public)
+curl -X POST https://api.averagedatabase.com/yeet \\
+  -H "x-averagedb-api-key: YOUR_API_KEY" \\
+  -F "public=true" \\
+  -F "file1=@/path/to/file1.jpg" \\
+  -F "file2=@/path/to/file2.png" \\
+  -F "file3=@/path/to/file3.mp4"
+
+# Response will include an array of file IDs and URLs:
+{
+  "message": "Successfully stored 3 file(s) in our ultra-secure ASS!",
+  "files": [
+    { "file_id": "abc123", "file_url": "https://api.averagedatabase.com/ass/abc123", "filename": "file1.jpg", "size_bytes": 1024000 },
+    { "file_id": "def456", "file_url": "https://api.averagedatabase.com/ass/def456", "filename": "file2.png", "size_bytes": 2048000 },
+    { "file_id": "ghi789", "file_url": "https://api.averagedatabase.com/ass/ghi789", "filename": "file3.mp4", "size_bytes": 73728 }
+  ],
+  "brought_to_you_by": "Ad message here"
+}`}
+                    </Code>
+                  </Stack>
+                </Paper>
+              )}
+
+              {currentEndpoint.path === "/ass/:file_id" && (
+                <Paper p="md" withBorder mt="md">
+                  <Stack gap="md">
+                    <Divider label="Example Usage" labelPosition="left" />
+                    <Code block>
+                      {`# Retrieve a public file (no API key required)
+curl -X GET "https://api.averagedatabase.com/ass/abc123"
+
+# Retrieve a private file (requires API key)
+curl -X GET "https://api.averagedatabase.com/ass/abc123" \\
+  -H "x-averagedb-api-key: YOUR_API_KEY"
+`}
+                    </Code>
+                  </Stack>
+                </Paper>
+              )}
+            </div>
           </Stack>
         </Grid.Col>
       </Grid>
     </Container>
   );
-} 
+}
