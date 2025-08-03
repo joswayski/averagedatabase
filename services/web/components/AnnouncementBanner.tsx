@@ -3,7 +3,7 @@ import { Link } from "react-router";
 export function AnnouncementBanner() {
   return (
     <Link
-      to="/blog/storage"
+      to="/blog/ass"
       prefetch="render"
       className="block w-full bg-orange-500 hover:bg-orange-600 transition-colors"
     >

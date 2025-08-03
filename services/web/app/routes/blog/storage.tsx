@@ -7,7 +7,7 @@ import {
   Code,
   Anchor,
 } from "@mantine/core";
-import storageLogo from "/public/storage.png";
+import assLogo from "/public/ass.png";
 export function meta() {
   return [
     { title: "Storage is now available in AvgDB - Average Database Blog" },
@@ -57,7 +57,7 @@ export default function SpareChangeRoundBlogPost() {
               our Average Storage System (ASS).
             </p>
 
-            <img src={storageLogo} alt="ASS funding" className="mb-4" />
+            <img src={assLogo} alt="ASS funding" className="mb-4" />
 
             <p className="text-lg text-gray-700 leading-relaxed mb-4">
               Thanks to the generous investment from{" "}
