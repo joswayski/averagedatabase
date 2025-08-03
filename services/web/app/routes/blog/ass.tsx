@@ -36,7 +36,7 @@ export default function SpareChangeRoundBlogPost() {
               Product Update
             </Badge>
             <h1 className="text-4xl lg:text-5xl font-bold mb-3 text-white">
-              Average Storage System (ASS) is now available in AvgDB
+              Average Storage Service (ASS) is now available in AvgDB
             </h1>
             <div className="flex items-center gap-4">
               <Text className="text-blue-100">August 03, 2025</Text>
@@ -54,7 +54,7 @@ export default function SpareChangeRoundBlogPost() {
               </span>{" "}
               We're announcing our $21.97 funding round{" "}
               <span className="italic">and</span> the general availability of
-              our Average Storage System (ASS).
+              our Average Storage Service (ASS).
             </p>
 
             <img src={assLogo} alt="ASS funding" className="mb-4" />

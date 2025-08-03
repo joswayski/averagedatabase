@@ -9,7 +9,7 @@ export function AnnouncementBanner() {
     >
       <div className="container mx-auto px-4 py-2 text-center text-white flex items-center justify-center gap-2">
         <span>
-          🎉 Put your files in our ASS! Average Storage System now generally
+          🎉 Put your files in our ASS! Average Storage Service now generally
           available.
         </span>
         <span className="underline font-medium">Read about it →</span>
