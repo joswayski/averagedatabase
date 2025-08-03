@@ -21,7 +21,7 @@ const blogPosts = [
     image:
       "https://upload.wikimedia.org/wikipedia/commons/b/bc/Amazon-S3-Logo.svg",
     date: "August 03, 2025",
-    slug: "storage",
+    slug: "ass",
     excerpt:
       "We've raised $21.97 from @AvgDatabaseCEO and @notjoswayski to build the future of Average Storage System (ASS)",
   },
