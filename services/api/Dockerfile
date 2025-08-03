@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM rust:1.80 as builder
+FROM rust:1.81 as builder
 
 # Install required tools for cross-compilation
 RUN apt-get update && apt-get install -y musl-tools
