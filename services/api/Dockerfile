@@ -28,6 +28,8 @@ FROM alpine:latest
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
 COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/api .
+# Copy the logo file
+COPY src/avgdblogo.png ./src/
 
 EXPOSE 8080
 CMD ["./api"]
