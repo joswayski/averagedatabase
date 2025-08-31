@@ -15,7 +15,7 @@ export const testimonials: Testimonial[] = [
     name: "Sam Lambert",
     handle: "isamlambert",
     imageUrl:
-      "https://pbs.twimg.com/profile_images/1913800449234518016/5a6mJS5S_400x400.jpg",
+      "https://pbs.twimg.com/profile_images/1943902836011491328/h-2O7dHz_400x400.jpg",
     logoUrl: "https://svgmix.com/uploads/7ab8a3-planetscale.svg",
     xeet: "https://x.com/isamlambert/status/1858310132071039208",
   },
