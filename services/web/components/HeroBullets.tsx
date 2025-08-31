@@ -8,6 +8,11 @@ const factsheet = [
         description: "Free tier rugpull delayed"
     },
     {
+      title: "Bulletproof",
+      description:
+        "Only mainstream database that has never received a negative report (hitpiece?) from Jepsen",
+    },
+    {
         title: "Serverless",
         description: "Don't worry about scaling, just add your credit card"
     },
