@@ -60,7 +60,7 @@ export async function action({ request }: { request: Request }) {
   if (_action === 'getApiKey') {
     try {
       const response = await axios.post(
-        `https://api.averagedatabase.com/gibs-key`,
+        `http://avgdb-api.default.svc.cluster.local:80/gibs-key`,
         {}
       );
       return response.data;
