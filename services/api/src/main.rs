@@ -372,7 +372,7 @@ fn validate_file_content(data: &[u8], claimed_extension: &str) -> bool {
 }
 
 async fn check_rate_limit(cache: &RateLimitCache, api_key: &str) -> bool {
-    const MAX_UPLOADS_PER_HOUR: u32 = 100;
+    const MAX_UPLOADS_PER_HOUR: u32 = 10;
     const RATE_LIMIT_WINDOW: u64 = 3600; // 1 hour in seconds
     
     let mut rate_cache = cache.lock().await;
@@ -1545,6 +1545,9 @@ async fn upload_file(
             let _ = file.write_all(&branded_data).await;
         }
 
+        // Run proactive cleanup to maintain storage limits
+        cleanup_storage_if_needed().await;
+
         // Add file info to our response
         file_infos.push(FileInfo {
             file_id: file_id.clone(),
@@ -1645,103 +1648,108 @@ async fn get_public_file(AxumPath(file_id): AxumPath<String>) -> Response {
         .into_response()
 }
 
-async fn cleanup_old_files() {
+async fn cleanup_storage_if_needed() {
     use std::time::SystemTime;
+    
+    let data_dir = if std::env::var("AVGDB_ENV").unwrap_or_default() == "production" {
+        Path::new("/data")
+    } else {
+        Path::new("./data")
+    };
+    if !data_dir.exists() {
+        return;
+    }
 
-    loop {
-        // Run cleanup every hour
-        sleep(Duration::from_secs(3600)).await;
+    let mut files_to_check = Vec::new();
+    let mut initial_total_size = 0u64;
 
-        let data_dir = if std::env::var("AVGDB_ENV").unwrap_or_default() == "production" {
-            Path::new("/data")
-        } else {
-            Path::new("./data")
-        };
-        if !data_dir.exists() {
-            continue;
-        }
-
-        let mut files_to_check = Vec::new();
-        let mut initial_total_size = 0u64;
-
-        // Collect all files and their metadata
-        if let Ok(mut entries) = fs::read_dir(data_dir).await {
-            while let Ok(Some(entry)) = entries.next_entry().await {
-                if let Ok(metadata) = entry.metadata().await {
-                    if metadata.is_file() {
-                        initial_total_size += metadata.len();
-                        if let Ok(modified) = metadata.modified() {
-                            files_to_check.push((entry.path(), modified, metadata.len()));
-                        }
+    // Collect all files and their metadata
+    if let Ok(mut entries) = fs::read_dir(data_dir).await {
+        while let Ok(Some(entry)) = entries.next_entry().await {
+            if let Ok(metadata) = entry.metadata().await {
+                if metadata.is_file() {
+                    initial_total_size += metadata.len();
+                    if let Ok(modified) = metadata.modified() {
+                        files_to_check.push((entry.path(), modified, metadata.len()));
                     }
                 }
             }
         }
+    }
 
-        let size_limit = 10 * 1024 * 1024 * 1024; // 10GB
-        let age_limit = Duration::from_secs(24 * 3600); // 1 day
-        let now = SystemTime::now();
+    let size_limit = 10 * 1024 * 1024 * 1024; // 10GB
+    let age_limit = Duration::from_secs(24 * 3600); // 1 day
+    let now = SystemTime::now();
 
-        // Sort by modification time (oldest first)
-        files_to_check.sort_by(|a, b| a.1.cmp(&b.1));
+    // Sort by modification time (oldest first)
+    files_to_check.sort_by(|a, b| a.1.cmp(&b.1));
 
-        let mut current_total_size = initial_total_size;
-        let mut deleted_count = 0;
-        let mut deleted_size = 0u64;
+    let mut current_total_size = initial_total_size;
+    let mut deleted_count = 0;
+    let mut deleted_size = 0u64;
 
-        // Process ALL files - no early termination
-        for (path, modified, size) in files_to_check {
-            let age = now.duration_since(modified);
-            
-            let should_delete = match age {
-                Ok(file_age) => {
-                    // Always delete files older than 1 day
-                    if file_age > age_limit {
-                        true
-                    } 
-                    // If we're over size limit, delete oldest files regardless of age
-                    else if current_total_size > size_limit {
-                        true
-                    }
-                    // Keep recent files if we're under size limit
-                    else {
-                        false
-                    }
-                }
-                Err(_) => {
-                    // If we can't get file age, delete it to be safe
+    // Process files until we're under the size limit
+    for (path, modified, size) in files_to_check {
+        let age = now.duration_since(modified);
+        
+        let should_delete = match age {
+            Ok(file_age) => {
+                // Always delete files older than 1 day
+                if file_age > age_limit {
+                    true
+                } 
+                // If we're over size limit, delete oldest files regardless of age
+                else if current_total_size > size_limit {
                     true
                 }
-            };
+                // Keep recent files if we're under size limit
+                else {
+                    false
+                }
+            }
+            Err(_) => {
+                // If we can't get file age, delete it to be safe
+                true
+            }
+        };
 
-            if should_delete {
-                match fs::remove_file(&path).await {
-                    Ok(_) => {
-                        current_total_size = current_total_size.saturating_sub(size);
-                        deleted_count += 1;
-                        deleted_size += size;
-                        println!("Cleaned up file: {:?} (size: {} bytes, age: {:?})", 
-                               path, size, age.map(|a| format!("{:.1}h", a.as_secs_f64() / 3600.0)));
-                    }
-                    Err(e) => {
-                        println!("Failed to delete file {:?}: {}", path, e);
-                    }
+        if should_delete {
+            match fs::remove_file(&path).await {
+                Ok(_) => {
+                    current_total_size = current_total_size.saturating_sub(size);
+                    deleted_count += 1;
+                    deleted_size += size;
+                    println!("Cleaned up file: {:?} (size: {} bytes, age: {:?})", 
+                           path, size, age.map(|a| format!("{:.1}h", a.as_secs_f64() / 3600.0)));
+                }
+                Err(e) => {
+                    println!("Failed to delete file {:?}: {}", path, e);
                 }
             }
         }
-
-        if deleted_count > 0 {
-            println!(
-                "Cleanup completed: deleted {} files ({:.2} MB), total storage: {:.2} MB", 
-                deleted_count,
-                deleted_size as f64 / (1024.0 * 1024.0),
-                current_total_size as f64 / (1024.0 * 1024.0)
-            );
-        } else {
-            println!(
-                "Cleanup completed: no files deleted, total storage: {:.2} MB", 
-                current_total_size as f64 / (1024.0 * 1024.0)
-            );
+        
+        // Stop deleting if we're now under the size limit
+        if current_total_size <= size_limit {
+            break;
         }
+    }
+
+    if deleted_count > 0 {
+        println!(
+            "Proactive cleanup completed: deleted {} files ({:.2} MB), total storage: {:.2} MB", 
+            deleted_count,
+            deleted_size as f64 / (1024.0 * 1024.0),
+            current_total_size as f64 / (1024.0 * 1024.0)
+        );
+    }
+}
+
+async fn cleanup_old_files() {
+    loop {
+        // Run cleanup every hour as a backup
+        sleep(Duration::from_secs(3600)).await;
+        
+        println!("Running hourly cleanup...");
+        cleanup_storage_if_needed().await;
     }
 }
