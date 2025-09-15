@@ -22,6 +22,21 @@ use axum::{
 use lru::LruCache;
 use std::{num::NonZeroUsize, sync::Arc, time::Duration};
 use tower::ServiceBuilder;
+
+// File security configuration
+const ALLOWED_EXTENSIONS: &[&str] = &[
+    "jpg", "jpeg", "png", "gif", "webp",  // Images
+    "pdf",                                 // Documents
+    "txt", "md", "csv", "log",            // Text files
+    "json", "xml",                        // Data files
+    "mp3", "wav", "m4a",                  // Audio (safe formats)
+    "mp4", "webm", "mov",                 // Video (safe formats)
+    "zip", "tar", "gz"                    // Archives (note: still need content validation)
+];
+
+// Rate limiting structure
+type RateLimitCache = Arc<Mutex<LruCache<String, (u32, u64)>>>; // (count, reset_time)
+
 const ADS: &[&str; 100] = &[
     "Tempur-Pedic: Experience the ultimate comfort with Tempur-Pedic mattresses.",
     "Glade: Freshen up your home with Glade air fresheners.",
@@ -298,6 +313,98 @@ struct RetrieveFileResponse {
     brought_to_you_by: String,
 }
 
+// Security validation functions
+fn is_allowed_file_extension(extension: &str) -> bool {
+    ALLOWED_EXTENSIONS.contains(&extension.to_lowercase().as_str())
+}
+
+fn sanitize_filename(filename: &str) -> String {
+    filename
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '.' || *c == '-' || *c == '_')
+        .take(255) // Limit filename length
+        .collect::<String>()
+}
+
+fn validate_file_content(data: &[u8], claimed_extension: &str) -> bool {
+    let ext = claimed_extension.to_lowercase();
+    
+    match ext.as_str() {
+        // Image formats - check magic numbers
+        "jpg" | "jpeg" => data.len() >= 3 && &data[0..3] == b"\xFF\xD8\xFF",
+        "png" => data.len() >= 4 && &data[0..4] == b"\x89PNG",
+        "gif" => data.len() >= 4 && (&data[0..4] == b"GIF8" || &data[0..4] == b"GIF9"),
+        "webp" => data.len() >= 12 && &data[0..4] == b"RIFF" && &data[8..12] == b"WEBP",
+        
+        // Document formats
+        "pdf" => data.len() >= 4 && &data[0..4] == b"%PDF",
+        
+        // Text formats - allow anything for these (they're generally safe)
+        "txt" | "md" | "csv" | "log" => true,
+        
+        // Data formats
+        "json" => {
+            // Try to parse as JSON
+            serde_json::from_slice::<serde_json::Value>(data).is_ok()
+        },
+        "xml" => {
+            // Basic XML validation - starts with < and contains >
+            data.len() > 0 && data[0] == b'<' && data.contains(&b'>')
+        },
+        
+        // Audio formats
+        "mp3" => data.len() >= 3 && (&data[0..3] == b"ID3" || &data[0..2] == b"\xFF\xFB"),
+        "wav" => data.len() >= 12 && &data[0..4] == b"RIFF" && &data[8..12] == b"WAVE",
+        "m4a" => data.len() >= 8 && &data[4..8] == b"ftyp",
+        
+        // Video formats
+        "mp4" => data.len() >= 8 && &data[4..8] == b"ftyp",
+        "webm" => data.len() >= 4 && &data[0..4] == b"\x1A\x45\xDF\xA3",
+        "mov" => data.len() >= 8 && &data[4..8] == b"ftyp",
+        
+        // Archive formats - basic validation
+        "zip" => data.len() >= 4 && &data[0..4] == b"PK\x03\x04",
+        "tar" => data.len() >= 262, // TAR has specific structure but no magic number
+        "gz" => data.len() >= 3 && &data[0..3] == b"\x1F\x8B\x08",
+        
+        _ => false, // Unknown extension
+    }
+}
+
+async fn check_rate_limit(cache: &RateLimitCache, api_key: &str) -> bool {
+    const MAX_UPLOADS_PER_HOUR: u32 = 100;
+    const RATE_LIMIT_WINDOW: u64 = 3600; // 1 hour in seconds
+    
+    let mut rate_cache = cache.lock().await;
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    
+    let result = match rate_cache.get(api_key) {
+        Some((count, reset_time)) => {
+            if now > *reset_time {
+                // Reset window
+                (true, 1, now + RATE_LIMIT_WINDOW)
+            } else if *count >= MAX_UPLOADS_PER_HOUR {
+                // Rate limit exceeded
+                (false, *count, *reset_time)
+            } else {
+                // Increment counter
+                (true, *count + 1, *reset_time)
+            }
+        }
+        None => {
+            // First upload for this API key
+            (true, 1, now + RATE_LIMIT_WINDOW)
+        }
+    };
+    
+    // Update the cache with the new values
+    rate_cache.put(api_key.to_string(), (result.1, result.2));
+    result.0
+}
+
 #[tokio::main(flavor = "multi_thread")]
 async fn main() {
     tracing_subscriber::fmt::init();
@@ -308,6 +415,10 @@ async fn main() {
 
     // Auth cache for users
     let auth_cache: Arc<Mutex<LruCache<String, CacheEntry>>> =
+        Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
+
+    // Rate limiting cache for file uploads
+    let rate_limit_cache: RateLimitCache =
         Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
 
     // Spawn background task to clean up old files
@@ -371,6 +482,7 @@ async fn main() {
             ServiceBuilder::new()
                 .layer(Extension(kv_cache.clone())) // For original key-value operations
                 .layer(Extension(auth_cache.clone())) // For auth operations
+                .layer(Extension(rate_limit_cache.clone())) // For rate limiting
                 .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10MB max for file uploads
                 .layer(middleware::from_fn(sorry_bud)),
         );
@@ -1217,10 +1329,10 @@ AAAAAAA                   AAAAAAA    vvv               gggggggg::::::g DDDDDDDDD
                             };
 
                             // Get existing pages
-                            let mut pages = doc.get_pages();
+                            let pages = doc.get_pages();
 
                             // Get a vector of existing page IDs
-                            let mut existing_page_ids: Vec<_> = pages.values().cloned().collect();
+                            let existing_page_ids: Vec<_> = pages.values().cloned().collect();
 
                             // Create a new array of page references with logo pages interspersed
                             let mut new_kids = Vec::new();
@@ -1293,7 +1405,20 @@ AAAAAAA                   AAAAAAA    vvv               gggggggg::::::g DDDDDDDDD
     }
 }
 
-async fn upload_file(Extension(api_key): Extension<String>, mut multipart: Multipart) -> Response {
+async fn upload_file(
+    Extension(api_key): Extension<String>,
+    Extension(rate_limit_cache): Extension<RateLimitCache>,
+    mut multipart: Multipart,
+) -> Response {
+    // Check rate limiting first
+    if !check_rate_limit(&rate_limit_cache, &api_key).await {
+        return (
+            StatusCode::TOO_MANY_REQUESTS,
+            "Rate limit exceeded. Maximum 100 file uploads per hour per API key.".to_string(),
+        )
+            .into_response();
+    }
+
     // Ensure data directory exists
     // Use local directory for development, /data for production
     let data_dir = if std::env::var("AVGDB_ENV").unwrap_or_default() == "production" {
@@ -1333,13 +1458,23 @@ async fn upload_file(Extension(api_key): Extension<String>, mut multipart: Multi
         }
 
         let filename_str = field.file_name().map(|s| s.to_string());
-        if let Some(filename) = filename_str {
+        if let Some(original_filename) = filename_str {
+            // Sanitize filename
+            let sanitized_filename = sanitize_filename(&original_filename);
+            if sanitized_filename.is_empty() {
+                return (
+                    StatusCode::BAD_REQUEST,
+                    format!("Invalid filename: '{}'", original_filename),
+                )
+                    .into_response();
+            }
+
             // Collect file data for later processing
             let mut file_data = Vec::new();
             while let Ok(Some(chunk)) = field.chunk().await {
                 file_data.extend_from_slice(&chunk);
             }
-            files_to_process.push((filename, file_data));
+            files_to_process.push((sanitized_filename, file_data));
         }
     }
 
@@ -1352,13 +1487,37 @@ async fn upload_file(Extension(api_key): Extension<String>, mut multipart: Multi
     // Second pass: process all collected files with the correct public flag
     for (filename, file_data) in files_to_process {
         file_count += 1;
-        let original_size = file_data.len() as u64;
 
         // Generate a unique file ID
         let file_ext = Path::new(&filename)
             .extension()
             .and_then(|ext| ext.to_str())
             .unwrap_or("bin");
+
+        // Security checks: validate file extension
+        if !is_allowed_file_extension(file_ext) {
+            return (
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "File type '{}' is not allowed. Allowed types: {}",
+                    file_ext,
+                    ALLOWED_EXTENSIONS.join(", ")
+                ),
+            )
+                .into_response();
+        }
+
+        // Security checks: validate file content matches extension
+        if !validate_file_content(&file_data, file_ext) {
+            return (
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "File content does not match the '{}' file type. This could indicate a malicious file.",
+                    file_ext
+                ),
+            )
+                .into_response();
+        }
 
         // Create a hash of the API key for cleaner filenames
         let api_key_hash = format!("{:x}", md5::compute(&api_key));
@@ -1405,7 +1564,7 @@ async fn upload_file(Extension(api_key): Extension<String>, mut multipart: Multi
 
     let res = UploadResponse {
         message: format!(
-            "Successfully stored {} file(s) in our ultra-secure ASS!{}",
+            "Successfully stored {} file(s) in our ultra-secure ASS! All files have been validated for security.{}",
             file_count,
             if is_public {
                 "".to_string()
@@ -1433,8 +1592,7 @@ async fn get_public_file(AxumPath(file_id): AxumPath<String>) -> Response {
     let mut found_file = None;
     let mut found_content_type = "application/octet-stream";
 
-    if let Ok(entries) = fs::read_dir(data_dir).await {
-        let mut entries = entries;
+    if let Ok(mut entries) = fs::read_dir(data_dir).await {
         while let Ok(Some(entry)) = entries.next_entry().await {
             if let Some(name) = entry.file_name().to_str() {
                 println!("DEBUG: Checking file: {}", name);
@@ -1507,8 +1665,7 @@ async fn cleanup_old_files() {
         let mut initial_total_size = 0u64;
 
         // Collect all files and their metadata
-        if let Ok(entries) = fs::read_dir(data_dir).await {
-            let mut entries = entries;
+        if let Ok(mut entries) = fs::read_dir(data_dir).await {
             while let Ok(Some(entry)) = entries.next_entry().await {
                 if let Ok(metadata) = entry.metadata().await {
                     if metadata.is_file() {
