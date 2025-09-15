@@ -1503,8 +1503,8 @@ async fn cleanup_old_files() {
             continue;
         }
 
-        let mut total_size = 0u64;
         let mut files_to_check = Vec::new();
+        let mut initial_total_size = 0u64;
 
         // Collect all files and their metadata
         if let Ok(entries) = fs::read_dir(data_dir).await {
@@ -1512,7 +1512,7 @@ async fn cleanup_old_files() {
             while let Ok(Some(entry)) = entries.next_entry().await {
                 if let Ok(metadata) = entry.metadata().await {
                     if metadata.is_file() {
-                        total_size += metadata.len();
+                        initial_total_size += metadata.len();
                         if let Ok(modified) = metadata.modified() {
                             files_to_check.push((entry.path(), modified, metadata.len()));
                         }
@@ -1521,7 +1521,6 @@ async fn cleanup_old_files() {
             }
         }
 
-        // Delete files if total size > 10GB or files are older than 1 day
         let size_limit = 10 * 1024 * 1024 * 1024; // 10GB
         let age_limit = Duration::from_secs(24 * 3600); // 1 day
         let now = SystemTime::now();
@@ -1529,29 +1528,63 @@ async fn cleanup_old_files() {
         // Sort by modification time (oldest first)
         files_to_check.sort_by(|a, b| a.1.cmp(&b.1));
 
+        let mut current_total_size = initial_total_size;
+        let mut deleted_count = 0;
+        let mut deleted_size = 0u64;
+
+        // Process ALL files - no early termination
         for (path, modified, size) in files_to_check {
-            let should_delete = if let Ok(age) = now.duration_since(modified) {
-                age > age_limit || total_size > size_limit
-            } else {
-                false
+            let age = now.duration_since(modified);
+            
+            let should_delete = match age {
+                Ok(file_age) => {
+                    // Always delete files older than 1 day
+                    if file_age > age_limit {
+                        true
+                    } 
+                    // If we're over size limit, delete oldest files regardless of age
+                    else if current_total_size > size_limit {
+                        true
+                    }
+                    // Keep recent files if we're under size limit
+                    else {
+                        false
+                    }
+                }
+                Err(_) => {
+                    // If we can't get file age, delete it to be safe
+                    true
+                }
             };
 
             if should_delete {
-                if let Ok(_) = fs::remove_file(&path).await {
-                    total_size = total_size.saturating_sub(size);
-                    println!("Cleaned up old file: {:?}", path);
+                match fs::remove_file(&path).await {
+                    Ok(_) => {
+                        current_total_size = current_total_size.saturating_sub(size);
+                        deleted_count += 1;
+                        deleted_size += size;
+                        println!("Cleaned up file: {:?} (size: {} bytes, age: {:?})", 
+                               path, size, age.map(|a| format!("{:.1}h", a.as_secs_f64() / 3600.0)));
+                    }
+                    Err(e) => {
+                        println!("Failed to delete file {:?}: {}", path, e);
+                    }
                 }
             }
+        }
 
-            // Stop deleting if we're under the size limit and remaining files are young
-            if total_size <= size_limit
-                && now
-                    .duration_since(modified)
-                    .map(|d| d < age_limit)
-                    .unwrap_or(false)
-            {
-                break;
-            }
+        if deleted_count > 0 {
+            println!(
+                "Cleanup completed: deleted {} files ({:.2} MB), total storage: {:.2} MB", 
+                deleted_count,
+                deleted_size as f64 / (1024.0 * 1024.0),
+                current_total_size as f64 / (1024.0 * 1024.0)
+            );
+        } else {
+            println!(
+                "Cleanup completed: no files deleted, total storage: {:.2} MB", 
+                current_total_size as f64 / (1024.0 * 1024.0)
+            );
         }
     }
 }
