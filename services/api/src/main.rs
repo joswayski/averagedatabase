@@ -8,6 +8,7 @@ extern crate lru;
 use image::{imageops, GenericImageView, ImageFormat};
 use lopdf::{Dictionary, Document, Object, Stream};
 use serde_json::json;
+use std::collections::HashMap;
 use std::io::Cursor;
 use std::path::Path;
 
@@ -25,13 +26,13 @@ use tower::ServiceBuilder;
 
 // File security configuration
 const ALLOWED_EXTENSIONS: &[&str] = &[
-    "jpg", "jpeg", "png", "gif", "webp",  // Images
-    "pdf",                                 // Documents
-    "txt", "md", "csv", "log",            // Text files
-    "json", "xml",                        // Data files
-    "mp3", "wav", "m4a",                  // Audio (safe formats)
-    "mp4", "webm", "mov",                 // Video (safe formats)
-    "zip", "tar", "gz"                    // Archives (note: still need content validation)
+    "jpg", "jpeg", "png", "gif", "webp", // Images
+    "pdf",  // Documents
+    "txt", "md", "csv", "log", // Text files
+    "json", "xml", // Data files
+    "mp3", "wav", "m4a", // Audio (safe formats)
+    "mp4", "webm", "mov", // Video (safe formats)
+    "zip", "tar", "gz", // Archives (note: still need content validation)
 ];
 
 // Rate limiting structure
@@ -328,45 +329,45 @@ fn sanitize_filename(filename: &str) -> String {
 
 fn validate_file_content(data: &[u8], claimed_extension: &str) -> bool {
     let ext = claimed_extension.to_lowercase();
-    
+
     match ext.as_str() {
         // Image formats - check magic numbers
         "jpg" | "jpeg" => data.len() >= 3 && &data[0..3] == b"\xFF\xD8\xFF",
         "png" => data.len() >= 4 && &data[0..4] == b"\x89PNG",
         "gif" => data.len() >= 4 && (&data[0..4] == b"GIF8" || &data[0..4] == b"GIF9"),
         "webp" => data.len() >= 12 && &data[0..4] == b"RIFF" && &data[8..12] == b"WEBP",
-        
+
         // Document formats
         "pdf" => data.len() >= 4 && &data[0..4] == b"%PDF",
-        
+
         // Text formats - allow anything for these (they're generally safe)
         "txt" | "md" | "csv" | "log" => true,
-        
+
         // Data formats
         "json" => {
             // Try to parse as JSON
             serde_json::from_slice::<serde_json::Value>(data).is_ok()
-        },
+        }
         "xml" => {
             // Basic XML validation - starts with < and contains >
             data.len() > 0 && data[0] == b'<' && data.contains(&b'>')
-        },
-        
+        }
+
         // Audio formats
         "mp3" => data.len() >= 3 && (&data[0..3] == b"ID3" || &data[0..2] == b"\xFF\xFB"),
         "wav" => data.len() >= 12 && &data[0..4] == b"RIFF" && &data[8..12] == b"WAVE",
         "m4a" => data.len() >= 8 && &data[4..8] == b"ftyp",
-        
+
         // Video formats
         "mp4" => data.len() >= 8 && &data[4..8] == b"ftyp",
         "webm" => data.len() >= 4 && &data[0..4] == b"\x1A\x45\xDF\xA3",
         "mov" => data.len() >= 8 && &data[4..8] == b"ftyp",
-        
+
         // Archive formats - basic validation
         "zip" => data.len() >= 4 && &data[0..4] == b"PK\x03\x04",
         "tar" => data.len() >= 262, // TAR has specific structure but no magic number
         "gz" => data.len() >= 3 && &data[0..3] == b"\x1F\x8B\x08",
-        
+
         _ => false, // Unknown extension
     }
 }
@@ -374,13 +375,13 @@ fn validate_file_content(data: &[u8], claimed_extension: &str) -> bool {
 async fn check_rate_limit(cache: &RateLimitCache, api_key: &str) -> bool {
     const MAX_UPLOADS_PER_HOUR: u32 = 10;
     const RATE_LIMIT_WINDOW: u64 = 3600; // 1 hour in seconds
-    
+
     let mut rate_cache = cache.lock().await;
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    
+
     let result = match rate_cache.get(api_key) {
         Some((count, reset_time)) => {
             if now > *reset_time {
@@ -399,7 +400,7 @@ async fn check_rate_limit(cache: &RateLimitCache, api_key: &str) -> bool {
             (true, 1, now + RATE_LIMIT_WINDOW)
         }
     };
-    
+
     // Update the cache with the new values
     rate_cache.put(api_key.to_string(), (result.1, result.2));
     result.0
@@ -419,6 +420,10 @@ async fn main() {
 
     // Rate limiting cache for file uploads
     let rate_limit_cache: RateLimitCache =
+        Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
+
+    // Vector cache for our "enterprise-grade" vector database
+    let vector_cache: Arc<Mutex<LruCache<String, (Vec<f64>, Option<serde_json::Value>)>>> =
         Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
 
     // Spawn background task to clean up old files
@@ -478,11 +483,27 @@ async fn main() {
                 .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
         )
         .route("/ass/:file_id", get(get_public_file))
+        .route(
+            "/vectors",
+            post(store_vector)
+                .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
+        .route(
+            "/vectors/search",
+            post(search_vectors)
+                .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
+        .route(
+            "/embeddings",
+            post(create_embedding)
+                .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
+        )
         .layer(
             ServiceBuilder::new()
                 .layer(Extension(kv_cache.clone())) // For original key-value operations
                 .layer(Extension(auth_cache.clone())) // For auth operations
                 .layer(Extension(rate_limit_cache.clone())) // For rate limiting
+                .layer(Extension(vector_cache.clone())) // For our "enterprise-grade" vector DB
                 .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10MB max for file uploads
                 .layer(middleware::from_fn(sorry_bud)),
         );
@@ -685,6 +706,56 @@ struct CreateApiKeyResponse {
 #[derive(Serialize)]
 struct CreateApiKeyError {
     message: String,
+}
+
+#[derive(Deserialize)]
+struct StoreVectorRequest {
+    vector: Vec<f64>,
+    metadata: Option<serde_json::Value>,
+}
+
+#[derive(Deserialize)]
+struct CreateEmbeddingRequest {
+    text: String,
+    model: Option<String>,
+}
+
+#[derive(Serialize)]
+struct CreateEmbeddingResponse {
+    message: String,
+    embedding: Vec<f64>,
+    dimensions: usize,
+    model_used: String,
+    brought_to_you_by: String,
+}
+
+#[derive(Serialize)]
+struct StoreVectorResponse {
+    message: String,
+    vector_id: String,
+    dimensions: usize,
+    brought_to_you_by: String,
+}
+
+#[derive(Deserialize)]
+struct SearchVectorRequest {
+    query_vector: Vec<f64>,
+    top_k: Option<usize>,
+}
+
+#[derive(Serialize)]
+struct SearchVectorResponse {
+    message: String,
+    results: Vec<VectorSearchResult>,
+    brought_to_you_by: String,
+}
+
+#[derive(Serialize)]
+struct VectorSearchResult {
+    vector_id: String,
+    similarity: f64,
+    metadata: Option<serde_json::Value>,
+    vector: Vec<f64>,
 }
 
 fn get_random_ad(api_key: &str) -> String {
@@ -1648,9 +1719,380 @@ async fn get_public_file(AxumPath(file_id): AxumPath<String>) -> Response {
         .into_response()
 }
 
+// Our "proprietary" embedding models - enterprise-grade AI™
+
+fn avgdb_hash_embedding(text: &str, dimensions: usize) -> Vec<f64> {
+    // "Advanced hashing algorithm" - convert text to deterministic numbers
+    let mut embedding = vec![0.0; dimensions];
+    let bytes = text.as_bytes();
+
+    for (i, &byte) in bytes.iter().enumerate() {
+        let idx = i % dimensions;
+        // Use some "sophisticated" math to create embeddings
+        embedding[idx] += (byte as f64) * 0.01;
+        embedding[idx] += ((i + 1) as f64).sin() * 0.1;
+    }
+
+    // Normalize to prevent our "quantum processors" from overheating
+    let magnitude: f64 = embedding.iter().map(|x| x * x).sum::<f64>().sqrt();
+    if magnitude > 0.0 {
+        for val in &mut embedding {
+            *val /= magnitude;
+        }
+    }
+
+    embedding
+}
+
+fn avgdb_word_frequency_embedding(text: &str, dimensions: usize) -> Vec<f64> {
+    // "Advanced semantic analysis" - count letters and make it fancy
+    let mut embedding = vec![0.0; dimensions];
+    let text_lower = text.to_lowercase();
+
+    // Count character frequencies (this is "semantic understanding")
+    let mut char_counts = HashMap::new();
+    for ch in text_lower.chars() {
+        if ch.is_alphabetic() {
+            *char_counts.entry(ch).or_insert(0) += 1;
+        }
+    }
+
+    // Convert to embedding using "proprietary algorithm"
+    for (i, ch) in ('a'..='z').enumerate() {
+        if i < dimensions {
+            let count = char_counts.get(&ch).unwrap_or(&0);
+            embedding[i] = (*count as f64) / (text.len() as f64).max(1.0);
+
+            // Add some "neural network complexity"
+            embedding[i] = embedding[i].tanh(); // Very AI, much wow
+        }
+    }
+
+    // Fill remaining dimensions with "advanced features"
+    for i in 26..dimensions.min(50) {
+        match i - 26 {
+            0 => embedding[i] = (text.len() as f64).ln().max(0.0) / 10.0, // Text length feature
+            1 => embedding[i] = text.split_whitespace().count() as f64 / text.len() as f64, // Word density
+            2 => {
+                embedding[i] =
+                    text.chars().filter(|c| c.is_uppercase()).count() as f64 / text.len() as f64
+            } // Caps ratio
+            3 => {
+                embedding[i] =
+                    text.chars().filter(|c| c.is_numeric()).count() as f64 / text.len() as f64
+            } // Number ratio
+            4 => {
+                embedding[i] = text.chars().filter(|c| "!?.,;:".contains(*c)).count() as f64
+                    / text.len() as f64
+            } // Punctuation ratio
+            _ => embedding[i] = ((i * text.len()) as f64).sin() * 0.1, // "Deep learning features"
+        }
+    }
+
+    embedding
+}
+
+fn avgdb_semantic_embedding(text: &str, dimensions: usize) -> Vec<f64> {
+    // "GPT-killer algorithm" - actually tries to capture meaning
+    let mut embedding = vec![0.0; dimensions];
+    let text_lower = text.to_lowercase();
+    let words: Vec<&str> = text_lower.split_whitespace().collect();
+
+    // Create a simple "semantic map" based on word associations
+    let semantic_categories = [
+        (
+            "animals",
+            vec![
+                "cat", "dog", "bird", "fish", "pet", "animal", "cute", "fluffy",
+            ],
+        ),
+        (
+            "technology",
+            vec![
+                "computer",
+                "software",
+                "api",
+                "database",
+                "code",
+                "rust",
+                "programming",
+            ],
+        ),
+        (
+            "food",
+            vec![
+                "pizza",
+                "burger",
+                "eat",
+                "delicious",
+                "cook",
+                "restaurant",
+                "hungry",
+            ],
+        ),
+        (
+            "emotions",
+            vec!["happy", "sad", "angry", "love", "hate", "excited", "tired"],
+        ),
+        (
+            "locations",
+            vec![
+                "city", "country", "paris", "tokyo", "home", "travel", "place",
+            ],
+        ),
+        (
+            "actions",
+            vec![
+                "run", "jump", "think", "write", "read", "play", "work", "sleep",
+            ],
+        ),
+        (
+            "colors",
+            vec![
+                "red", "blue", "green", "yellow", "black", "white", "bright", "dark",
+            ],
+        ),
+        (
+            "size",
+            vec![
+                "big", "small", "large", "tiny", "huge", "massive", "little", "giant",
+            ],
+        ),
+    ];
+
+    // Calculate semantic scores for each category
+    for (i, (_category, keywords)) in semantic_categories.iter().enumerate() {
+        if i < dimensions {
+            let mut score = 0.0;
+            for word in &words {
+                if keywords.contains(word) {
+                    score += 1.0;
+                }
+                // Also check for partial matches (advanced!)
+                for keyword in keywords {
+                    if word.contains(keyword) || keyword.contains(word) {
+                        score += 0.5;
+                    }
+                }
+            }
+            embedding[i] = score / words.len().max(1) as f64;
+        }
+    }
+
+    // Fill remaining dimensions with "context vectors"
+    for i in semantic_categories.len()..dimensions {
+        let word_hash = words.get(i % words.len()).unwrap_or(&"").len();
+        embedding[i] = ((word_hash + i) as f64).sin() * 0.2;
+    }
+
+    // Apply "transformer attention mechanism" (just normalization)
+    let magnitude: f64 = embedding.iter().map(|x| x * x).sum::<f64>().sqrt();
+    if magnitude > 0.0 {
+        for val in &mut embedding {
+            *val /= magnitude;
+        }
+    }
+
+    embedding
+}
+
+async fn create_embedding(
+    Extension(api_key): Extension<String>,
+    Json(req): Json<CreateEmbeddingRequest>,
+) -> Response {
+    if req.text.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            "Text cannot be empty. Our AI needs something to think about!".to_string(),
+        )
+            .into_response();
+    }
+
+    if req.text.len() > 10000 {
+        return (
+            StatusCode::BAD_REQUEST,
+            "Text is too long! Our neural networks aren't infinite (yet). Max 10,000 characters."
+                .to_string(),
+        )
+            .into_response();
+    }
+
+    let model = req.model.as_deref().unwrap_or("avgdb-semantic-v1");
+    let dimensions = 128; // Our "optimized" dimension count
+
+    let (embedding, model_description) = match model {
+        "avgdb-hash-v1" => (
+            avgdb_hash_embedding(&req.text, dimensions),
+            "AvgDB Hash Embedding v1.0 - Deterministic character-based vector generation",
+        ),
+        "avgdb-frequency-v1" => (
+            avgdb_word_frequency_embedding(&req.text, dimensions),
+            "AvgDB Frequency Analysis v1.0 - Advanced character frequency semantic mapping",
+        ),
+        "avgdb-semantic-v1" | _ => (
+            avgdb_semantic_embedding(&req.text, dimensions),
+            "AvgDB Semantic Intelligence v1.0 - GPT-killer contextual understanding engine",
+        ),
+    };
+
+    let message = format!(
+        "Text successfully processed by our {} using {}. Semantic understanding achieved!",
+        model_description,
+        if api_key.starts_with("enterprise-") {
+            "enterprise quantum processors"
+        } else {
+            "consumer-grade silicon (with AI acceleration)"
+        }
+    );
+
+    let res = CreateEmbeddingResponse {
+        message,
+        embedding,
+        dimensions,
+        model_used: model.to_string(),
+        brought_to_you_by: get_random_ad(&api_key),
+    };
+
+    (StatusCode::OK, Json(res)).into_response()
+}
+
+// Cosine similarity calculation (the "AI magic" behind our vectors)
+fn cosine_similarity(a: &[f64], b: &[f64]) -> f64 {
+    if a.len() != b.len() {
+        return 0.0; // Different dimensions = no similarity (very scientific)
+    }
+
+    let dot_product: f64 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
+    let norm_a: f64 = a.iter().map(|x| x * x).sum::<f64>().sqrt();
+    let norm_b: f64 = b.iter().map(|x| x * x).sum::<f64>().sqrt();
+
+    if norm_a == 0.0 || norm_b == 0.0 {
+        return 0.0; // Avoid division by zero (we're professionals)
+    }
+
+    dot_product / (norm_a * norm_b)
+}
+
+async fn store_vector(
+    Extension(vector_cache): Extension<
+        Arc<Mutex<LruCache<String, (Vec<f64>, Option<serde_json::Value>)>>>,
+    >,
+    Extension(api_key): Extension<String>,
+    Json(req): Json<StoreVectorRequest>,
+) -> Response {
+    if req.vector.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            "Vector cannot be empty. Even our AI needs some dimensions to work with!".to_string(),
+        )
+            .into_response();
+    }
+
+    if req.vector.len() > 10000 {
+        return (
+            StatusCode::BAD_REQUEST,
+            "Vector is too large! Our servers aren't quantum computers (yet). Max 10,000 dimensions.".to_string(),
+        )
+            .into_response();
+    }
+
+    // Validate that all vector values are valid numbers
+    for (i, &value) in req.vector.iter().enumerate() {
+        if !value.is_finite() {
+            return (
+                StatusCode::BAD_REQUEST,
+                format!("Invalid vector value at index {}: {}. NaN and infinity break our quantum processors!", i, value),
+            )
+                .into_response();
+        }
+    }
+
+    let vector_id = get_random_string();
+    let cache_key = format!("vector:{}:{}", api_key, vector_id);
+
+    let mut cache = vector_cache.lock().await;
+    cache.put(cache_key, (req.vector.clone(), req.metadata.clone()));
+
+    let res = StoreVectorResponse {
+        message: "Vector successfully stored in our state-of-the-art multidimensional hyperspace! (It's just RAM but sounds cooler)".to_string(),
+        vector_id,
+        dimensions: req.vector.len(),
+        brought_to_you_by: get_random_ad(&api_key),
+    };
+
+    (StatusCode::CREATED, Json(res)).into_response()
+}
+
+async fn search_vectors(
+    Extension(vector_cache): Extension<
+        Arc<Mutex<LruCache<String, (Vec<f64>, Option<serde_json::Value>)>>>,
+    >,
+    Extension(api_key): Extension<String>,
+    Json(req): Json<SearchVectorRequest>,
+) -> Response {
+    if req.query_vector.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            "Query vector cannot be empty. How can we find similar nothing?".to_string(),
+        )
+            .into_response();
+    }
+
+    let top_k = req.top_k.unwrap_or(10).min(100); // Limit to 100 for "performance"
+    let cache = vector_cache.lock().await;
+
+    let org_prefix = format!("vector:{}:", api_key);
+    let mut results = Vec::new();
+
+    // Search through all vectors for this organization
+    for (key, (stored_vector, metadata)) in cache.iter() {
+        if key.starts_with(&org_prefix) {
+            let similarity = cosine_similarity(&req.query_vector, stored_vector);
+            let vector_id = key
+                .strip_prefix(&org_prefix)
+                .unwrap_or("unknown")
+                .to_string();
+
+            results.push(VectorSearchResult {
+                vector_id,
+                similarity,
+                metadata: metadata.clone(),
+                vector: stored_vector.clone(),
+            });
+        }
+    }
+
+    // Sort by similarity (highest first) - this is the "AI magic"
+    results.sort_by(|a, b| {
+        b.similarity
+            .partial_cmp(&a.similarity)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    // Take only top_k results
+    results.truncate(top_k);
+
+    let response_message = if results.is_empty() {
+        "No vectors found in your organization. Have you tried storing some vectors first? Revolutionary idea, I know.".to_string()
+    } else {
+        format!(
+            "Found {} similar vectors using our proprietary cosine similarity algorithm (it's just basic math but 'proprietary' sounds better)!", 
+            results.len()
+        )
+    };
+
+    let res = SearchVectorResponse {
+        message: response_message,
+        results,
+        brought_to_you_by: get_random_ad(&api_key),
+    };
+
+    (StatusCode::OK, Json(res)).into_response()
+}
+
 async fn cleanup_storage_if_needed() {
     use std::time::SystemTime;
-    
+
     let data_dir = if std::env::var("AVGDB_ENV").unwrap_or_default() == "production" {
         Path::new("/data")
     } else {
@@ -1691,13 +2133,13 @@ async fn cleanup_storage_if_needed() {
     // Process files until we're under the size limit
     for (path, modified, size) in files_to_check {
         let age = now.duration_since(modified);
-        
+
         let should_delete = match age {
             Ok(file_age) => {
                 // Always delete files older than 1 day
                 if file_age > age_limit {
                     true
-                } 
+                }
                 // If we're over size limit, delete oldest files regardless of age
                 else if current_total_size > size_limit {
                     true
@@ -1719,15 +2161,19 @@ async fn cleanup_storage_if_needed() {
                     current_total_size = current_total_size.saturating_sub(size);
                     deleted_count += 1;
                     deleted_size += size;
-                    println!("Cleaned up file: {:?} (size: {} bytes, age: {:?})", 
-                           path, size, age.map(|a| format!("{:.1}h", a.as_secs_f64() / 3600.0)));
+                    println!(
+                        "Cleaned up file: {:?} (size: {} bytes, age: {:?})",
+                        path,
+                        size,
+                        age.map(|a| format!("{:.1}h", a.as_secs_f64() / 3600.0))
+                    );
                 }
                 Err(e) => {
                     println!("Failed to delete file {:?}: {}", path, e);
                 }
             }
         }
-        
+
         // Stop deleting if we're now under the size limit
         if current_total_size <= size_limit {
             break;
@@ -1736,7 +2182,7 @@ async fn cleanup_storage_if_needed() {
 
     if deleted_count > 0 {
         println!(
-            "Proactive cleanup completed: deleted {} files ({:.2} MB), total storage: {:.2} MB", 
+            "Proactive cleanup completed: deleted {} files ({:.2} MB), total storage: {:.2} MB",
             deleted_count,
             deleted_size as f64 / (1024.0 * 1024.0),
             current_total_size as f64 / (1024.0 * 1024.0)
@@ -1748,7 +2194,7 @@ async fn cleanup_old_files() {
     loop {
         // Run cleanup every hour as a backup
         sleep(Duration::from_secs(3600)).await;
-        
+
         println!("Running hourly cleanup...");
         cleanup_storage_if_needed().await;
     }
