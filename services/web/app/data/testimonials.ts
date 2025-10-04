@@ -209,7 +209,7 @@ export const testimonials: Testimonial[] = [
     name: "Ben Dicken",
     handle: "BenjDicken",
     imageUrl:
-      "https://pbs.twimg.com/profile_images/1762619014306729984/jT9BEdMQ_400x400.jpg",
+      "https://pbs.twimg.com/profile_images/1964874854341148672/-KtZ2LC2_400x400.jpg",
     xeet: "https://x.com/BenjDicken/status/1940498208696025364",
   },
   {
