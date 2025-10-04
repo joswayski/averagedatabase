@@ -18,16 +18,30 @@ RUN cargo fetch
 # Copy the rest of the source code
 COPY . .
 
-# Build the application for x86_64
-RUN rustup target add x86_64-unknown-linux-musl
-RUN cargo build --release --target x86_64-unknown-linux-musl
+# Determine target architecture and build accordingly
+ARG TARGETARCH
+RUN case "$TARGETARCH" in \
+    "amd64") \
+        rustup target add x86_64-unknown-linux-musl && \
+        cargo build --release --target x86_64-unknown-linux-musl && \
+        cp target/x86_64-unknown-linux-musl/release/api /app/api \
+        ;; \
+    "arm64") \
+        rustup target add aarch64-unknown-linux-musl && \
+        cargo build --release --target aarch64-unknown-linux-musl && \
+        cp target/aarch64-unknown-linux-musl/release/api /app/api \
+        ;; \
+    *) \
+        echo "Unsupported architecture: $TARGETARCH" && exit 1 \
+        ;; \
+    esac
 
 # Stage 2: Create the runtime image
 FROM alpine:latest
 
 RUN apk add --no-cache ca-certificates
 WORKDIR /app
-COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/api .
+COPY --from=builder /app/api .
 # Copy the logo file
 COPY src/avgdblogo.png ./src/
 
