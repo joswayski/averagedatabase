@@ -8,9 +8,9 @@ extern crate lru;
 use image::{imageops, GenericImageView, ImageFormat};
 use lopdf::{Dictionary, Document, Object, Stream};
 use serde_json::json;
-use std::collections::HashMap;
 use std::io::Cursor;
 use std::path::Path;
+use std::{collections::HashMap, ops::Deref};
 
 use axum::{
     extract::{DefaultBodyLimit, Extension, Multipart, Path as AxumPath, Query, Request},
@@ -689,7 +689,14 @@ async fn add_item(
     (StatusCode::CREATED, Json(res)).into_response()
 }
 
+const SKIP_DELAY_PATH: [&str; 3] = ["/health", "/u-up", "/"];
+
 async fn sorry_bud(req: Request, next: Next) -> Result<Response, Response> {
+    let path = req.uri().path();
+    if SKIP_DELAY_PATH.contains(&path) {
+        return Ok(next.run(req).await);
+    }
+
     let delay = rand::thread_rng().gen_range(1..=1500);
 
     sleep(Duration::from_millis(delay)).await;
