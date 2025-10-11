@@ -168,6 +168,17 @@ export const testimonials: Testimonial[] = [
     xeet: "https://x.com/jamwt/status/1880016416285552900",
   },
   {
+    featured: true,
+    body: `We're happy to be an AvgDB wrapper`,
+    name: "Jamie Turner",
+    handle: "jamwt",
+    imageUrl:
+      "https://pbs.twimg.com/profile_images/1616614464169840641/uQgxVHsf_400x400.jpg",
+    xeet: "https://x.com/jamwt/status/1977088551818084502",
+    logoUrl:
+      "https://dka575ofm4ao0.cloudfront.net/pages-transactional_logos/retina/328383/convex-logo-2048.png",
+  },
+  {
     featured: false,
     body: `AverageDB is the only option`,
     name: "Matt Palmer",
