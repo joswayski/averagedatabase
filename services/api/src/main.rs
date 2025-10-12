@@ -689,7 +689,7 @@ async fn add_item(
     (StatusCode::CREATED, Json(res)).into_response()
 }
 
-const SKIP_DELAY_PATH: [&str; 3] = ["/health", "/u-up", "/"];
+const SKIP_DELAY_PATH: [&str; 4] = ["/health", "/u-up", "/", "/gibs-key"];
 
 async fn sorry_bud(req: Request, next: Next) -> Result<Response, Response> {
     let path = req.uri().path();
