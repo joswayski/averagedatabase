@@ -1,2 +1,4 @@
 root*
 avgdb/node_modules
+target/
+
