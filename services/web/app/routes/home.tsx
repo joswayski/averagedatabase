@@ -27,25 +27,29 @@ function shuffleArray<T>(array: T[]): T[] {
 // const stableTestimonialList = [...featuredTestimonials, ...shuffledRegularTestimonials];
 
 export async function loader() {
-  const featured = allTestimonialsData.filter(t => t.featured);
-  const regular = allTestimonialsData.filter(t => !t.featured);
+  const featured = allTestimonialsData.filter((t) => t.featured);
+  const regular = allTestimonialsData.filter((t) => !t.featured);
   const shuffledRegular = shuffleArray(regular);
 
   return {
-    testimonials: [...featured, ...shuffledRegular]
+    testimonials: [...featured, ...shuffledRegular],
   };
 }
 
 export function meta() {
   return [
     { title: "Average Database" },
-    { name: "description", content: "The world's most performant, secure, scalable, reliable, free-est, open source data platform" },
+    {
+      name: "description",
+      content:
+        "The world's most performant, secure, scalable, reliable, free-est, open source data platform",
+    },
   ];
 }
 
 export function shouldRevalidate({
   formData,
-  defaultShouldRevalidate
+  defaultShouldRevalidate,
 }: ShouldRevalidateFunctionArgs) {
   if (formData && formData.get("_action") === "getApiKey") {
     return false;
@@ -57,10 +61,12 @@ export async function action({ request }: { request: Request }) {
   const body = await request.formData();
   const { _action, ...values } = Object.fromEntries(body);
 
-  if (_action === 'getApiKey') {
+  if (_action === "getApiKey") {
     try {
       const response = await axios.post(
-        `http://avgdb-api.default.svc.cluster.local:80/gibs-key`,
+        `${
+          process.env.AVGDB_API_DOMAIN || "https://api.averagedatabase.com"
+        }/gibs-key`,
         {}
       );
       return response.data;
@@ -87,7 +93,7 @@ export default function Home() {
       <Benchmarks />
       <Testimonials testimonials={testimonials} />
       <Pricing />
-      <Footer/>
+      <Footer />
     </main>
   );
 }

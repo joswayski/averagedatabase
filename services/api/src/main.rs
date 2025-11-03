@@ -10,6 +10,7 @@ use lopdf::{Dictionary, Document, Object, Stream};
 use serde_json::json;
 use std::io::Cursor;
 use std::path::Path;
+use std::{collections::HashMap, ops::Deref};
 
 use axum::{
     extract::{DefaultBodyLimit, Extension, Multipart, Path as AxumPath, Query, Request},
@@ -25,13 +26,13 @@ use tower::ServiceBuilder;
 
 // File security configuration
 const ALLOWED_EXTENSIONS: &[&str] = &[
-    "jpg", "jpeg", "png", "gif", "webp",  // Images
-    "pdf",                                 // Documents
-    "txt", "md", "csv", "log",            // Text files
-    "json", "xml",                        // Data files
-    "mp3", "wav", "m4a",                  // Audio (safe formats)
-    "mp4", "webm", "mov",                 // Video (safe formats)
-    "zip", "tar", "gz"                    // Archives (note: still need content validation)
+    "jpg", "jpeg", "png", "gif", "webp", // Images
+    "pdf",  // Documents
+    "txt", "md", "csv", "log", // Text files
+    "json", "xml", // Data files
+    "mp3", "wav", "m4a", // Audio (safe formats)
+    "mp4", "webm", "mov", // Video (safe formats)
+    "zip", "tar", "gz", // Archives (note: still need content validation)
 ];
 
 // Rate limiting structure
@@ -328,45 +329,45 @@ fn sanitize_filename(filename: &str) -> String {
 
 fn validate_file_content(data: &[u8], claimed_extension: &str) -> bool {
     let ext = claimed_extension.to_lowercase();
-    
+
     match ext.as_str() {
         // Image formats - check magic numbers
         "jpg" | "jpeg" => data.len() >= 3 && &data[0..3] == b"\xFF\xD8\xFF",
         "png" => data.len() >= 4 && &data[0..4] == b"\x89PNG",
         "gif" => data.len() >= 4 && (&data[0..4] == b"GIF8" || &data[0..4] == b"GIF9"),
         "webp" => data.len() >= 12 && &data[0..4] == b"RIFF" && &data[8..12] == b"WEBP",
-        
+
         // Document formats
         "pdf" => data.len() >= 4 && &data[0..4] == b"%PDF",
-        
+
         // Text formats - allow anything for these (they're generally safe)
         "txt" | "md" | "csv" | "log" => true,
-        
+
         // Data formats
         "json" => {
             // Try to parse as JSON
             serde_json::from_slice::<serde_json::Value>(data).is_ok()
-        },
+        }
         "xml" => {
             // Basic XML validation - starts with < and contains >
             data.len() > 0 && data[0] == b'<' && data.contains(&b'>')
-        },
-        
+        }
+
         // Audio formats
         "mp3" => data.len() >= 3 && (&data[0..3] == b"ID3" || &data[0..2] == b"\xFF\xFB"),
         "wav" => data.len() >= 12 && &data[0..4] == b"RIFF" && &data[8..12] == b"WAVE",
         "m4a" => data.len() >= 8 && &data[4..8] == b"ftyp",
-        
+
         // Video formats
         "mp4" => data.len() >= 8 && &data[4..8] == b"ftyp",
         "webm" => data.len() >= 4 && &data[0..4] == b"\x1A\x45\xDF\xA3",
         "mov" => data.len() >= 8 && &data[4..8] == b"ftyp",
-        
+
         // Archive formats - basic validation
         "zip" => data.len() >= 4 && &data[0..4] == b"PK\x03\x04",
         "tar" => data.len() >= 262, // TAR has specific structure but no magic number
         "gz" => data.len() >= 3 && &data[0..3] == b"\x1F\x8B\x08",
-        
+
         _ => false, // Unknown extension
     }
 }
@@ -374,13 +375,13 @@ fn validate_file_content(data: &[u8], claimed_extension: &str) -> bool {
 async fn check_rate_limit(cache: &RateLimitCache, api_key: &str) -> bool {
     const MAX_UPLOADS_PER_HOUR: u32 = 10;
     const RATE_LIMIT_WINDOW: u64 = 3600; // 1 hour in seconds
-    
+
     let mut rate_cache = cache.lock().await;
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_secs();
-    
+
     let result = match rate_cache.get(api_key) {
         Some((count, reset_time)) => {
             if now > *reset_time {
@@ -399,7 +400,7 @@ async fn check_rate_limit(cache: &RateLimitCache, api_key: &str) -> bool {
             (true, 1, now + RATE_LIMIT_WINDOW)
         }
     };
-    
+
     // Update the cache with the new values
     rate_cache.put(api_key.to_string(), (result.1, result.2));
     result.0
@@ -668,7 +669,14 @@ async fn add_item(
     (StatusCode::CREATED, Json(res)).into_response()
 }
 
+const SKIP_DELAY_PATH: [&str; 4] = ["/health", "/u-up", "/", "/gibs-key"];
+
 async fn sorry_bud(req: Request, next: Next) -> Result<Response, Response> {
+    let path = req.uri().path();
+    if SKIP_DELAY_PATH.contains(&path) {
+        return Ok(next.run(req).await);
+    }
+
     let delay = rand::thread_rng().gen_range(1..=1500);
 
     sleep(Duration::from_millis(delay)).await;
@@ -1650,7 +1658,7 @@ async fn get_public_file(AxumPath(file_id): AxumPath<String>) -> Response {
 
 async fn cleanup_storage_if_needed() {
     use std::time::SystemTime;
-    
+
     let data_dir = if std::env::var("AVGDB_ENV").unwrap_or_default() == "production" {
         Path::new("/data")
     } else {
@@ -1691,13 +1699,13 @@ async fn cleanup_storage_if_needed() {
     // Process files until we're under the size limit
     for (path, modified, size) in files_to_check {
         let age = now.duration_since(modified);
-        
+
         let should_delete = match age {
             Ok(file_age) => {
                 // Always delete files older than 1 day
                 if file_age > age_limit {
                     true
-                } 
+                }
                 // If we're over size limit, delete oldest files regardless of age
                 else if current_total_size > size_limit {
                     true
@@ -1719,15 +1727,19 @@ async fn cleanup_storage_if_needed() {
                     current_total_size = current_total_size.saturating_sub(size);
                     deleted_count += 1;
                     deleted_size += size;
-                    println!("Cleaned up file: {:?} (size: {} bytes, age: {:?})", 
-                           path, size, age.map(|a| format!("{:.1}h", a.as_secs_f64() / 3600.0)));
+                    println!(
+                        "Cleaned up file: {:?} (size: {} bytes, age: {:?})",
+                        path,
+                        size,
+                        age.map(|a| format!("{:.1}h", a.as_secs_f64() / 3600.0))
+                    );
                 }
                 Err(e) => {
                     println!("Failed to delete file {:?}: {}", path, e);
                 }
             }
         }
-        
+
         // Stop deleting if we're now under the size limit
         if current_total_size <= size_limit {
             break;
@@ -1736,7 +1748,7 @@ async fn cleanup_storage_if_needed() {
 
     if deleted_count > 0 {
         println!(
-            "Proactive cleanup completed: deleted {} files ({:.2} MB), total storage: {:.2} MB", 
+            "Proactive cleanup completed: deleted {} files ({:.2} MB), total storage: {:.2} MB",
             deleted_count,
             deleted_size as f64 / (1024.0 * 1024.0),
             current_total_size as f64 / (1024.0 * 1024.0)
@@ -1748,7 +1760,7 @@ async fn cleanup_old_files() {
     loop {
         // Run cleanup every hour as a backup
         sleep(Duration::from_secs(3600)).await;
-        
+
         println!("Running hourly cleanup...");
         cleanup_storage_if_needed().await;
     }
