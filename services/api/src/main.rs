@@ -422,10 +422,6 @@ async fn main() {
     let rate_limit_cache: RateLimitCache =
         Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
 
-    // Vector cache for our "enterprise-grade" vector database
-    let vector_cache: Arc<Mutex<LruCache<String, (Vec<f64>, Option<serde_json::Value>)>>> =
-        Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
-
     // Spawn background task to clean up old files
     tokio::spawn(async {
         cleanup_old_files().await;
@@ -483,27 +479,11 @@ async fn main() {
                 .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
         )
         .route("/ass/:file_id", get(get_public_file))
-        .route(
-            "/vectors",
-            post(store_vector)
-                .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
-        )
-        .route(
-            "/vectors/search",
-            post(search_vectors)
-                .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
-        )
-        .route(
-            "/embeddings",
-            post(create_embedding)
-                .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
-        )
         .layer(
             ServiceBuilder::new()
                 .layer(Extension(kv_cache.clone())) // For original key-value operations
                 .layer(Extension(auth_cache.clone())) // For auth operations
                 .layer(Extension(rate_limit_cache.clone())) // For rate limiting
-                .layer(Extension(vector_cache.clone())) // For our "enterprise-grade" vector DB
                 .layer(DefaultBodyLimit::max(10 * 1024 * 1024)) // 10MB max for file uploads
                 .layer(middleware::from_fn(sorry_bud)),
         );
@@ -713,56 +693,6 @@ struct CreateApiKeyResponse {
 #[derive(Serialize)]
 struct CreateApiKeyError {
     message: String,
-}
-
-#[derive(Deserialize)]
-struct StoreVectorRequest {
-    vector: Vec<f64>,
-    metadata: Option<serde_json::Value>,
-}
-
-#[derive(Deserialize)]
-struct CreateEmbeddingRequest {
-    text: String,
-    model: Option<String>,
-}
-
-#[derive(Serialize)]
-struct CreateEmbeddingResponse {
-    message: String,
-    embedding: Vec<f64>,
-    dimensions: usize,
-    model_used: String,
-    brought_to_you_by: String,
-}
-
-#[derive(Serialize)]
-struct StoreVectorResponse {
-    message: String,
-    vector_id: String,
-    dimensions: usize,
-    brought_to_you_by: String,
-}
-
-#[derive(Deserialize)]
-struct SearchVectorRequest {
-    query_vector: Vec<f64>,
-    top_k: Option<usize>,
-}
-
-#[derive(Serialize)]
-struct SearchVectorResponse {
-    message: String,
-    results: Vec<VectorSearchResult>,
-    brought_to_you_by: String,
-}
-
-#[derive(Serialize)]
-struct VectorSearchResult {
-    vector_id: String,
-    similarity: f64,
-    metadata: Option<serde_json::Value>,
-    vector: Vec<f64>,
 }
 
 fn get_random_ad(api_key: &str) -> String {
@@ -1724,79 +1654,6 @@ async fn get_public_file(AxumPath(file_id): AxumPath<String>) -> Response {
         "File not found or is not public. Files must be uploaded with public=true to be accessible via this URL."
     )
         .into_response()
-}
-
-// Our "proprietary" embedding models - enterprise-grade AI™
-
-fn avgdb_hash_embedding(text: &str, dimensions: usize) -> Vec<f64> {
-    // "Advanced hashing algorithm" - convert text to deterministic numbers
-    let mut embedding = vec![0.0; dimensions];
-    let bytes = text.as_bytes();
-
-    for (i, &byte) in bytes.iter().enumerate() {
-        let idx = i % dimensions;
-        // Use some "sophisticated" math to create embeddings
-        embedding[idx] += (byte as f64) * 0.01;
-        embedding[idx] += ((i + 1) as f64).sin() * 0.1;
-    }
-
-    // Normalize to prevent our "quantum processors" from overheating
-    let magnitude: f64 = embedding.iter().map(|x| x * x).sum::<f64>().sqrt();
-    if magnitude > 0.0 {
-        for val in &mut embedding {
-            *val /= magnitude;
-        }
-    }
-
-    embedding
-}
-
-fn avgdb_word_frequency_embedding(text: &str, dimensions: usize) -> Vec<f64> {
-    // "Advanced semantic analysis" - count letters and make it fancy
-    let mut embedding = vec![0.0; dimensions];
-    let text_lower = text.to_lowercase();
-
-    // Count character frequencies (this is "semantic understanding")
-    let mut char_counts = HashMap::new();
-    for ch in text_lower.chars() {
-        if ch.is_alphabetic() {
-            *char_counts.entry(ch).or_insert(0) += 1;
-        }
-    }
-
-    // Convert to embedding using "proprietary algorithm"
-    for (i, ch) in ('a'..='z').enumerate() {
-        if i < dimensions {
-            let count = char_counts.get(&ch).unwrap_or(&0);
-            embedding[i] = (*count as f64) / (text.len() as f64).max(1.0);
-
-            // Add some "neural network complexity"
-            embedding[i] = embedding[i].tanh(); // Very AI, much wow
-        }
-    }
-
-    // Fill remaining dimensions with "advanced features"
-    for i in 26..dimensions.min(50) {
-        match i - 26 {
-            0 => embedding[i] = (text.len() as f64).ln().max(0.0) / 10.0, // Text length feature
-            1 => embedding[i] = text.split_whitespace().count() as f64 / text.len() as f64, // Word density
-            2 => {
-                embedding[i] =
-                    text.chars().filter(|c| c.is_uppercase()).count() as f64 / text.len() as f64
-            } // Caps ratio
-            3 => {
-                embedding[i] =
-                    text.chars().filter(|c| c.is_numeric()).count() as f64 / text.len() as f64
-            } // Number ratio
-            4 => {
-                embedding[i] = text.chars().filter(|c| "!?.,;:".contains(*c)).count() as f64
-                    / text.len() as f64
-            } // Punctuation ratio
-            _ => embedding[i] = ((i * text.len()) as f64).sin() * 0.1, // "Deep learning features"
-        }
-    }
-
-    embedding
 }
 
 async fn cleanup_storage_if_needed() {
