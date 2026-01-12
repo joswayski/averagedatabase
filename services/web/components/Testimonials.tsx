@@ -60,14 +60,26 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
               "{t.body}"
             </blockquote>
             {t.logoUrl && (
-              <div className="flex justify-start items-center mt-auto pt-2">
+              <div
+                className={`flex justify-start items-end mt-auto ${
+                  t.logoUrl.includes("planetscale") ||
+                  t.logoUrl.includes("awsmp-logos")
+                    ? "-mb-3 -ml-3"
+                    : t.logoUrl.includes("prisma")
+                    ? "-mb-2"
+                    : ""
+                }`}
+              >
                 <img
                   src={t.logoUrl}
                   alt=""
                   className={
-                    t.logoUrl.includes("prisma")
-                      ? "object-contain h-10 w-auto max-w-[160px]"
-                      : "object-contain h-7 w-auto max-w-[140px]"
+                    t.logoUrl.includes("planetscale") ||
+                    t.logoUrl.includes("awsmp-logos")
+                      ? "object-contain object-left-bottom h-14 w-auto max-w-[180px]"
+                      : t.logoUrl.includes("prisma")
+                      ? "object-contain object-left-bottom h-10 w-auto max-w-[160px]"
+                      : "object-contain object-left-bottom h-7 w-auto max-w-[140px]"
                   }
                 />
               </div>
