@@ -138,7 +138,7 @@ export const testimonials: Testimonial[] = [
     name: "David Lorenz",
     handle: "activenode",
     imageUrl:
-      "https://pbs.twimg.com/profile_images/1899370347851304960/22y6pkYa_400x400.jpg",
+      "https://pbs.twimg.com/profile_images/1990726229880709120/3e_xseXq_400x400.jpg",
     xeet: "https://x.com/activenode/status/1822970297571512657",
   },
   {
@@ -194,7 +194,7 @@ export const testimonials: Testimonial[] = [
     name: "Luke Kim",
     handle: "0xLukeKim",
     imageUrl:
-      "https://pbs.twimg.com/profile_images/1578586913812131841/gIjixxnp_400x400.jpg",
+      "https://pbs.twimg.com/profile_images/1991912399977508864/HKIP_B5g_400x400.jpg",
     xeet: "https://x.com/0xLukeKim/status/1844515385112133794",
   },
   {
