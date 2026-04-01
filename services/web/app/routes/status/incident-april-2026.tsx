@@ -37,10 +37,18 @@ export function meta() {
       content:
         "https://averagedatabase.com/status/incident-report-april-1-2026-control-plane-degradation",
     },
-    { name: "twitter:card", content: "summary" },
+    {
+      property: "og:image",
+      content: "https://averagedatabase.com/incident-4-1-2026.png",
+    },
+    { name: "twitter:card", content: "summary_large_image" },
     {
       name: "twitter:title",
       content: "Incident Report: April 1st, 2026 — Control Plane Degradation",
+    },
+    {
+      name: "twitter:image",
+      content: "https://averagedatabase.com/incident-4-1-2026.png",
     },
     {
       name: "twitter:description",
