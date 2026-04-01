@@ -9,6 +9,7 @@ export default [
   index("routes/home.tsx"),
   layout("routes/docs/layout.tsx", [route("docs", "routes/docs/docs.tsx")]),
   route("status", "routes/status/status.tsx"),
+  route("status/incident-report-april-1-2026-control-plane-degradation", "routes/status/incident-april-2026.tsx"),
   layout("routes/blog/layout.tsx", [
     route("blog", "routes/blog/blog.tsx"),
     route("blog/we-rich-lmao", "routes/blog/we-rich-lmao.tsx"),
