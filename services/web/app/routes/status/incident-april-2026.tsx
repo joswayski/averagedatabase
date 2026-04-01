@@ -10,10 +10,12 @@ export async function loader({ request }: { request: Request }) {
   if (!BOT_UA_PATTERN.test(ua)) {
     return redirect(YOUTUBE_URL);
   }
-  return {};
+  const url = new URL(request.url);
+  return { origin: url.origin };
 }
 
-export function meta() {
+export function meta({ data }: { data: { origin: string } }) {
+  const origin = data?.origin ?? "https://averagedatabase.com";
   return [
     { title: "Incident Report: April 1st, 2026 — Control Plane Degradation | Average Database" },
     {
@@ -34,12 +36,11 @@ export function meta() {
     },
     {
       property: "og:url",
-      content:
-        "https://averagedatabase.com/status/incident-report-april-1-2026-control-plane-degradation",
+      content: `${origin}/status/incident-report-april-1-2026-control-plane-degradation`,
     },
     {
       property: "og:image",
-      content: "https://averagedatabase.com/incident-4-1-2026.png",
+      content: `${origin}/incident-4-1-2026.png`,
     },
     { name: "twitter:card", content: "summary_large_image" },
     {
@@ -48,7 +49,7 @@ export function meta() {
     },
     {
       name: "twitter:image",
-      content: "https://averagedatabase.com/incident-4-1-2026.png",
+      content: `${origin}/incident-4-1-2026.png`,
     },
     {
       name: "twitter:description",
