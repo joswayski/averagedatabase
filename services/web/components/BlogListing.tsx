@@ -23,7 +23,7 @@ const blogPosts = [
     date: "August 03, 2025",
     slug: "ass",
     excerpt:
-      "We've raised $21.97 from @AvgDatabaseCEO and @notjoswayski to build the future of Average Storage Service (ASS)",
+      "We've raised $21.97 from @AvgDatabaseCEO and @josevalerio to build the future of Average Storage Service (ASS)",
   },
   {
     title: `They asked us what we would do if we couldn't raise another round..`,
