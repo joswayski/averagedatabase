@@ -70,11 +70,11 @@ export default function SpareChangeRoundBlogPost() {
               </a>{" "}
               and{" "}
               <a
-                href="https://x.com/notjoswayski"
+                href="https://x.com/josevalerio"
                 target="_blank"
                 className="text-blue-500 hover:text-blue-700"
               >
-                @notjoswayski
+                @josevalerio
               </a>
               , we've been able to develop and launch ASS after months of
               rigorous testing with Fortune 500 companies who have reported

@@ -23,13 +23,13 @@ export function Footer() {
           </Anchor>
           <Text size="sm" c="dimmed">•</Text>
           <Anchor 
-            href="https://x.com/notjoswayski" 
+            href="https://x.com/josevalerio" 
             target="_blank" 
             rel="noopener noreferrer"
             size="sm"
             className="hover:text-blue-500"
           >
-            @notjoswayski
+            @josevalerio
           </Anchor>
         </Group>
       </div>
