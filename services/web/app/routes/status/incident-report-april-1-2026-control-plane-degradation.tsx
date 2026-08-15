@@ -1,63 +1,60 @@
-import { redirect } from "react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
-const YOUTUBE_URL = "https://www.youtube.com/watch?v=KnVu-qNEcrg";
+const ORIGIN = "https://averagedatabase.com";
 
-const BOT_UA_PATTERN =
-  /Twitterbot|facebookexternalhit|Slackbot|LinkedInBot|Discordbot|WhatsApp|Googlebot|bingbot|Applebot/i;
-
-export async function loader({ request }: { request: Request }) {
-  const ua = request.headers.get("user-agent") || "";
-  if (!BOT_UA_PATTERN.test(ua)) {
-    return redirect(YOUTUBE_URL);
-  }
-  const url = new URL(request.url);
-  return { origin: url.origin };
-}
-
-export function meta({ data }: { data: { origin: string } }) {
-  const origin = data?.origin ?? "https://averagedatabase.com";
-  return [
-    { title: "Incident Report: April 1st, 2026 — Control Plane Degradation | Average Database" },
-    {
-      name: "description",
-      content:
-        "Average Database experienced a critical control plane failure in our managed Kubernetes infrastructure affecting database clusters in US-EAST-1 and EU-WEST-2.",
-    },
-    { property: "og:type", content: "article" },
-    { property: "og:site_name", content: "Average Database" },
-    {
-      property: "og:title",
-      content: "Incident Report: April 1st, 2026 — Control Plane Degradation",
-    },
-    {
-      property: "og:description",
-      content:
-        "Average Database experienced a critical control plane failure in our managed Kubernetes infrastructure. etcd leader election timeouts caused cascading API server failures affecting all managed database clusters in US-EAST-1 and EU-WEST-2 regions for approximately 23 minutes.",
-    },
-    {
-      property: "og:url",
-      content: `${origin}/status/incident-report-april-1-2026-control-plane-degradation`,
-    },
-    {
-      property: "og:image",
-      content: `${origin}/incident-4-1-2026.png`,
-    },
-    { name: "twitter:card", content: "summary_large_image" },
-    {
-      name: "twitter:title",
-      content: "Incident Report: April 1st, 2026 — Control Plane Degradation",
-    },
-    {
-      name: "twitter:image",
-      content: `${origin}/incident-4-1-2026.png`,
-    },
-    {
-      name: "twitter:description",
-      content:
-        "Average Database experienced a critical control plane failure in our managed Kubernetes infrastructure affecting database clusters in US-EAST-1 and EU-WEST-2.",
-    },
-  ];
-}
+export const Route = createFileRoute(
+  "/status/incident-report-april-1-2026-control-plane-degradation",
+)({
+  head: () => ({
+    meta: [
+      {
+        title:
+          "Incident Report: April 1st, 2026 — Control Plane Degradation | Average Database",
+      },
+      {
+        name: "description",
+        content:
+          "Average Database experienced a critical control plane failure in our managed Kubernetes infrastructure affecting database clusters in US-EAST-1 and EU-WEST-2.",
+      },
+      { property: "og:type", content: "article" },
+      { property: "og:site_name", content: "Average Database" },
+      {
+        property: "og:title",
+        content:
+          "Incident Report: April 1st, 2026 — Control Plane Degradation",
+      },
+      {
+        property: "og:description",
+        content:
+          "Average Database experienced a critical control plane failure in our managed Kubernetes infrastructure. etcd leader election timeouts caused cascading API server failures affecting all managed database clusters in US-EAST-1 and EU-WEST-2 regions for approximately 23 minutes.",
+      },
+      {
+        property: "og:url",
+        content: `${ORIGIN}/status/incident-report-april-1-2026-control-plane-degradation`,
+      },
+      {
+        property: "og:image",
+        content: `${ORIGIN}/incident-4-1-2026.png`,
+      },
+      { name: "twitter:card", content: "summary_large_image" },
+      {
+        name: "twitter:title",
+        content:
+          "Incident Report: April 1st, 2026 — Control Plane Degradation",
+      },
+      {
+        name: "twitter:image",
+        content: `${ORIGIN}/incident-4-1-2026.png`,
+      },
+      {
+        name: "twitter:description",
+        content:
+          "Average Database experienced a critical control plane failure in our managed Kubernetes infrastructure affecting database clusters in US-EAST-1 and EU-WEST-2.",
+      },
+    ],
+  }),
+  component: IncidentApril2026,
+});
 
 export default function IncidentApril2026() {
   return (

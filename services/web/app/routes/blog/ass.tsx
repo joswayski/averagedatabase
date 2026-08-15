@@ -1,3 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
 import {
   Container,
   Paper,
@@ -8,16 +9,20 @@ import {
   Anchor,
 } from "@mantine/core";
 import assLogo from "/public/ass.png";
-export function meta() {
-  return [
-    { title: "Storage is now available in AvgDB - Average Database Blog" },
-    {
-      name: "description",
-      content:
-        "Learn about our new storage capabilities and how we built them with a modest budget.",
-    },
-  ];
-}
+
+export const Route = createFileRoute("/blog/ass")({
+  head: () => ({
+    meta: [
+      { title: "Storage is now available in AvgDB - Average Database Blog" },
+      {
+        name: "description",
+        content:
+          "Learn about our new storage capabilities and how we built them with a modest budget.",
+      },
+    ],
+  }),
+  component: SpareChangeRoundBlogPost,
+});
 
 export default function SpareChangeRoundBlogPost() {
   return (

@@ -1,15 +1,15 @@
-import { useState, useEffect, useRef } from "react";
+import { Link, useLocation } from "@tanstack/react-router";
 import {
+  ActionIcon,
+  Box,
   Burger,
   Container,
   Group,
-  Box,
   Overlay,
-  ActionIcon,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { NavLink, useLocation, useNavigation } from "react-router";
 import { IconX } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
 
 const links = [
   { link: "#benchmarks", label: "Benchmarks" },
@@ -24,77 +24,77 @@ export function HeaderSimple() {
   const [opened, { toggle }] = useDisclosure(false);
   const [activeHash, setActiveHash] = useState<string | null>(null);
   const location = useLocation();
-  const navigation = useNavigation();
-  const previousNavigation = useRef(navigation);
 
-  // Update active hash when location changes
   useEffect(() => {
-    if (location.hash) {
-      setActiveHash(location.hash);
-    } else if (location.pathname === "/" && !location.hash) {
-      setActiveHash(null);
+    setActiveHash(location.hash || null);
+  }, [location.hash, location.pathname]);
+
+  const isRouteActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(`${path}/`);
+
+  const scrollToSection = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    hash: string,
+  ) => {
+    if (location.pathname !== "/") {
+      return;
     }
-    previousNavigation.current = navigation;
-  }, [location, navigation]);
 
-  const items = links.map((link) => {
-    const isHashLink = link.link.startsWith("#");
-    const to = isHashLink
-      ? location.pathname === "/"
-        ? link.link
-        : `/${link.link}`
-      : link.link;
-
-    return (
-      <NavLink
-        key={link.label}
-        to={to}
-        prefetch={"render"}
-        onClick={(e) => {
-          if (isHashLink && location.pathname === "/") {
-            e.preventDefault();
-            const element = document.querySelector(link.link);
-            if (element) {
-              element.scrollIntoView({ behavior: "smooth" });
-              setActiveHash(link.link);
-            }
-          }
-        }}
-        className={({ isActive }) => {
-          const currentLinkIsActive = isHashLink
-            ? activeHash === link.link
-            : isActive;
-          const activeClasses = "bg-blue-600 text-white";
-          const inactiveClasses = "text-gray-700 hover:bg-stone-200";
-          return `block leading-none px-3 py-2 rounded-md no-underline text-sm font-medium transition-colors cursor-pointer ${
-            currentLinkIsActive ? activeClasses : inactiveClasses
-          }`;
-        }}
-        end={!isHashLink}
-      >
-        {link.label}
-      </NavLink>
-    );
-  });
+    event.preventDefault();
+    const element = document.querySelector(hash);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+      window.history.replaceState(null, "", hash);
+      setActiveHash(hash);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 h-14 bg-stone-50 border-b border-gray-200 w-full shadow-sm">
       <Container size="lg" className="h-14 flex justify-between items-center">
-        <NavLink
+        <Link
           to="/"
-          className={({ isActive }) =>
-            `flex items-center cursor-pointer ${isActive ? "opacity-80" : ""}`
-          }
-          end
+          className={`flex items-center cursor-pointer ${
+            location.pathname === "/" ? "opacity-80" : ""
+          }`}
         >
           <img
             src="/logo-small.png"
             alt="AvgDB logo small"
             className="h-10 w-40 object-contain mr-2"
           />
-        </NavLink>
+        </Link>
         <Group gap={5} visibleFrom="xs">
-          {items}
+          {links.map((link) => {
+            const isHashLink = link.link.startsWith("#");
+            const active = isHashLink
+              ? activeHash === link.link
+              : isRouteActive(link.link);
+            const className = `block leading-none px-3 py-2 rounded-md no-underline text-sm font-medium transition-colors cursor-pointer ${
+              active
+                ? "bg-blue-600 text-white"
+                : "text-gray-700 hover:bg-stone-200"
+            }`;
+
+            if (isHashLink) {
+              return (
+                <a
+                  key={link.label}
+                  href={location.pathname === "/" ? link.link : `/${link.link}`}
+                  onClick={(event) => scrollToSection(event, link.link)}
+                  className={className}
+                >
+                  {link.label}
+                </a>
+              );
+            }
+
+            return (
+              <Link key={link.label} to={link.link} className={className}>
+                {link.label}
+              </Link>
+            );
+          })}
         </Group>
         {opened ? (
           <ActionIcon
@@ -118,7 +118,6 @@ export function HeaderSimple() {
         )}
       </Container>
 
-      {/* Mobile menu with overlay - only show on mobile */}
       {opened && (
         <Box hiddenFrom="xs">
           <Overlay opacity={0.5} onClick={toggle} fixed zIndex={49} />
@@ -127,67 +126,51 @@ export function HeaderSimple() {
               <div className="flex flex-col divide-y divide-gray-100 m-0 p-0">
                 {links.map((link, index) => {
                   const isHashLink = link.link.startsWith("#");
-                  const to = isHashLink
-                    ? location.pathname === "/"
-                      ? link.link
-                      : `/${link.link}`
-                    : link.link;
-
-                  // Mobile specific active check
-                  const mobileLinkIsActive = isHashLink
+                  const active = isHashLink
                     ? activeHash === link.link
-                    : location.pathname === link.link ||
-                      (link.link === "/blog" &&
-                        location.pathname.startsWith("/blog/"));
+                    : isRouteActive(link.link);
+                  const className = `block w-full py-3 px-4 text-xl font-semibold text-left transition-colors cursor-pointer ${
+                    active
+                      ? "bg-blue-600 text-white"
+                      : `${
+                          index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                        } text-gray-700 hover:bg-stone-200`
+                  }`;
+                  const onClick = (
+                    event: React.MouseEvent<HTMLAnchorElement>,
+                  ) => {
+                    if (isHashLink) {
+                      scrollToSection(event, link.link);
+                    }
+                    toggle();
+                  };
 
-                  const textColor = mobileLinkIsActive
-                    ? "text-white"
-                    : "text-gray-700";
-                  const bgColor = mobileLinkIsActive
-                    ? "bg-blue-600"
-                    : index % 2 === 0
-                    ? "bg-gray-50"
-                    : "bg-white";
-
-                  // Need to pass isActive to NavLink for its own internal logic if not overriding completely
-                  return (
-                    <NavLink
-                      key={link.label}
-                      to={to}
-                      prefetch={"render"}
-                      onClick={(e) => {
-                        if (isHashLink && location.pathname === "/") {
-                          e.preventDefault();
-                          const element = document.querySelector(link.link);
-                          if (element) {
-                            element.scrollIntoView({ behavior: "smooth" });
-                            setActiveHash(link.link);
-                          }
+                  if (isHashLink) {
+                    return (
+                      <a
+                        key={link.label}
+                        href={
+                          location.pathname === "/"
+                            ? link.link
+                            : `/${link.link}`
                         }
-                        toggle(); // Close mobile menu on click
-                      }}
-                      // For mobile, we use the explicit bgColor and textColor
-                      className={({ isActive }) => {
-                        // Re-evaluate active for mobile, as NavLink's isActive might be different from our definition
-                        const currentMobileActive = isHashLink
-                          ? activeHash === link.link
-                          : isActive; // Use NavLink's isActive for non-hash links on mobile too for consistency
+                        onClick={onClick}
+                        className={className}
+                      >
+                        {link.label}
+                      </a>
+                    );
+                  }
 
-                        const mobileTextColor = currentMobileActive
-                          ? "text-white"
-                          : "text-gray-700";
-                        const mobileBgColor = currentMobileActive
-                          ? "bg-blue-600"
-                          : index % 2 === 0
-                          ? "bg-gray-50"
-                          : "bg-white";
-
-                        return `block w-full py-3 px-4 text-xl font-semibold text-left transition-colors cursor-pointer ${mobileBgColor} ${mobileTextColor} hover:bg-stone-200`;
-                      }}
-                      end={!isHashLink}
+                  return (
+                    <Link
+                      key={link.label}
+                      to={link.link}
+                      onClick={onClick}
+                      className={className}
                     >
                       {link.label}
-                    </NavLink>
+                    </Link>
                   );
                 })}
               </div>

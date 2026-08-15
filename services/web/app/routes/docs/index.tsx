@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createFileRoute, useLocation } from "@tanstack/react-router";
 import {
   Container,
   Title,
@@ -20,7 +21,19 @@ import {
   IconChevronRight,
   IconTrash,
 } from "@tabler/icons-react";
-import { useLocation } from "react-router";
+
+export const Route = createFileRoute("/docs/")({
+  head: () => ({
+    meta: [
+      { title: "Docs - Average Database" },
+      {
+        name: "description",
+        content: "Average Database API documentation.",
+      },
+    ],
+  }),
+  component: Docs,
+});
 
 // Import ads from main.rs
 const ADS = [
