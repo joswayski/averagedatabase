@@ -1,6 +1,6 @@
 import { IconCheck } from '@tabler/icons-react';
 import { Button, Container, Group, Image, List, Text, ThemeIcon, Title } from '@mantine/core';
-import { Link } from 'react-router';
+import { Link } from '@tanstack/react-router';
 
 const factsheet = [
     {

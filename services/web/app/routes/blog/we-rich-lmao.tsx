@@ -1,13 +1,23 @@
+import { createFileRoute } from "@tanstack/react-router";
 import { Container, Title, Text, Paper, Image, List, ThemeIcon, Divider, Badge } from '@mantine/core';
 import { HeaderSimple } from '../../../components/HeaderSimple';
 import { IconCircleCheckFilled } from '@tabler/icons-react';
 
-export function meta() {
-  return [
-    { title: "✨Announcing our $50m Series A funding round✨ - Average Database Blog" },
-    { name: "description", content: "Read about our latest funding round and future plans!" },
-  ];
-}
+export const Route = createFileRoute("/blog/we-rich-lmao")({
+  head: () => ({
+    meta: [
+      {
+        title:
+          "✨Announcing our $50m Series A funding round✨ - Average Database Blog",
+      },
+      {
+        name: "description",
+        content: "Read about our latest funding round and future plans!",
+      },
+    ],
+  }),
+  component: WeRichLmaoBlogPost,
+});
 
 export default function WeRichLmaoBlogPost() {
   return (

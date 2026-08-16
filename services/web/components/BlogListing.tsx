@@ -12,7 +12,7 @@ import {
   Overlay,
   Box,
 } from "@mantine/core";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { IconCalendar } from "@tabler/icons-react";
 
 const blogPosts = [

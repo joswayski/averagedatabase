@@ -1,10 +1,9 @@
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 
 export function AnnouncementBanner() {
   return (
     <Link
       to="/blog/ass"
-      prefetch="render"
       className="block w-full bg-orange-500 hover:bg-orange-600 transition-colors"
     >
       <div className="container mx-auto px-4 py-2 text-center text-white flex items-center justify-center gap-2">

@@ -11,10 +11,9 @@ import {
   ActionIcon,
 } from "@mantine/core";
 import { IconCheck, IconCopy } from "@tabler/icons-react";
-import { useState, useRef, useEffect } from "react";
-import { useFetcher, Link } from "react-router";
+import { Link } from "@tanstack/react-router";
+import { useRef, useState } from "react";
 import { notifications } from "@mantine/notifications";
-import type { action } from "../app/routes/home";
 
 interface PricingFeature {
   text: string;
@@ -99,78 +98,89 @@ const tiers: PricingTier[] = [
 export function Pricing() {
   const [submittedTier, setSubmittedTier] = useState<string | null>(null);
   const pricingRef = useRef<HTMLDivElement>(null);
-  const fetcher = useFetcher<typeof action>();
 
-  useEffect(() => {
-    if (fetcher.data && fetcher.state === "idle") {
-      const data = fetcher.data as any;
-      if (data.api_key) {
-        notifications.show({
-          title: "API Key Generated! 🎉",
-          message: (
-            <div>
-              <Group wrap="nowrap" gap="xs" align="center">
-                <Text size="sm">
-                  Your API key:{" "}
-                  <code className="font-bold">{data.api_key}</code>
-                </Text>
-                <CopyButton value={data.api_key} timeout={2000}>
-                  {({ copied, copy }) => (
-                    <ActionIcon
-                      color={copied ? "teal" : "gray"}
-                      onClick={copy}
-                      title={copied ? "Copied API Key" : "Copy API Key"}
-                      variant="subtle"
-                    >
-                      {copied ? (
-                        <IconCheck
-                          style={{ width: rem(16), height: rem(16) }}
-                        />
-                      ) : (
-                        <IconCopy style={{ width: rem(16), height: rem(16) }} />
-                      )}
-                    </ActionIcon>
-                  )}
-                </CopyButton>
-              </Group>
-              <Text size="sm" mb="xs">
-                Keep this key safe! You'll need it for all API requests.
-              </Text>
-              <Text
-                size="sm"
-                component={Link}
-                to="/docs"
-                className="!text-blue-600 !underline hover:!text-blue-700"
-              >
-                Click here to view the API documentation →
-              </Text>
-              {data.brought_to_you_by && (
-                <Text
-                  size="xs"
-                  c="dimmed"
-                  mt="xs"
-                  style={{ fontStyle: "italic" }}
-                >
-                  {data.brought_to_you_by}
-                </Text>
-              )}
-            </div>
-          ),
-          color: "blue",
-          autoClose: false,
-          withCloseButton: true,
-          position: "top-center",
-        });
-      } else if (data.error) {
-        notifications.show({
-          title: "Error",
-          message: data.error,
-          color: "red",
-          position: "top-center",
-        });
+  const requestApiKey = async (tierName: string) => {
+    setSubmittedTier(tierName);
+
+    try {
+      const response = await fetch("/api/gibs-key", { method: "POST" });
+      const data = (await response.json()) as {
+        api_key?: string;
+        brought_to_you_by?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !data.api_key) {
+        throw new Error(data.error ?? "sorry bruh we messed up :/");
       }
+
+      notifications.show({
+        title: "API Key Generated! 🎉",
+        message: (
+          <div>
+            <Group wrap="nowrap" gap="xs" align="center">
+              <Text size="sm">
+                Your API key: <code className="font-bold">{data.api_key}</code>
+              </Text>
+              <CopyButton value={data.api_key} timeout={2000}>
+                {({ copied, copy }) => (
+                  <ActionIcon
+                    color={copied ? "teal" : "gray"}
+                    onClick={copy}
+                    title={copied ? "Copied API Key" : "Copy API Key"}
+                    variant="subtle"
+                  >
+                    {copied ? (
+                      <IconCheck
+                        style={{ width: rem(16), height: rem(16) }}
+                      />
+                    ) : (
+                      <IconCopy style={{ width: rem(16), height: rem(16) }} />
+                    )}
+                  </ActionIcon>
+                )}
+              </CopyButton>
+            </Group>
+            <Text size="sm" mb="xs">
+              Keep this key safe! You'll need it for all API requests.
+            </Text>
+            <Text
+              size="sm"
+              component={Link}
+              to="/docs"
+              className="!text-blue-600 !underline hover:!text-blue-700"
+            >
+              Click here to view the API documentation →
+            </Text>
+            {data.brought_to_you_by && (
+              <Text
+                size="xs"
+                c="dimmed"
+                mt="xs"
+                style={{ fontStyle: "italic" }}
+              >
+                {data.brought_to_you_by}
+              </Text>
+            )}
+          </div>
+        ),
+        color: "blue",
+        autoClose: false,
+        withCloseButton: true,
+        position: "top-center",
+      });
+    } catch (error) {
+      notifications.show({
+        title: "Error",
+        message:
+          error instanceof Error ? error.message : "sorry bruh we messed up :/",
+        color: "red",
+        position: "top-center",
+      });
+    } finally {
+      setSubmittedTier(null);
     }
-  }, [fetcher.data, fetcher.state]);
+  };
 
   return (
     <Container id="pricing" size="lg" py="xl" ref={pricingRef}>
@@ -185,8 +195,7 @@ export function Pricing() {
 
       <Grid gutter="xl">
         {tiers.map((tier) => {
-          const isSubmitting =
-            fetcher.state === "submitting" && submittedTier === tier.name;
+          const isSubmitting = submittedTier === tier.name;
 
           return (
             <Grid.Col key={tier.name} span={{ base: 12, md: 4 }}>
@@ -242,25 +251,22 @@ export function Pricing() {
 
                 <div className="mt-8">
                   <div className="h-[42px]">
-                    <fetcher.Form method="post">
-                      <input type="hidden" name="_action" value="getApiKey" />
-                      <Button
-                        type="submit"
-                        fullWidth
-                        variant={tier.highlighted ? "filled" : "outline"}
-                        size="lg"
-                        radius="md"
-                        loading={isSubmitting}
-                        disabled={isSubmitting}
-                        className={`h-[42px] flex items-center justify-center !bg-blue-600 hover:!bg-blue-700 !text-white ${
-                          !tier.highlighted &&
-                          "!border-blue-600 hover:!bg-blue-50"
-                        }`}
-                        onClick={() => setSubmittedTier(tier.name)}
-                      >
-                        {isSubmitting ? "Generating..." : tier.buttonText}
-                      </Button>
-                    </fetcher.Form>
+                    <Button
+                      type="button"
+                      fullWidth
+                      variant={tier.highlighted ? "filled" : "outline"}
+                      size="lg"
+                      radius="md"
+                      loading={isSubmitting}
+                      disabled={submittedTier !== null}
+                      className={`h-[42px] flex items-center justify-center !bg-blue-600 hover:!bg-blue-700 !text-white ${
+                        !tier.highlighted &&
+                        "!border-blue-600 hover:!bg-blue-50"
+                      }`}
+                      onClick={() => requestApiKey(tier.name)}
+                    >
+                      {isSubmitting ? "Generating..." : tier.buttonText}
+                    </Button>
                   </div>
                 </div>
               </Paper>

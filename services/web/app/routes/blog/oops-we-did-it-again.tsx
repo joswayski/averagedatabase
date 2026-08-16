@@ -1,11 +1,22 @@
+import { createFileRoute } from "@tanstack/react-router";
 import { Container, Title, Text, Paper, Image, List, ThemeIcon, Divider, Badge } from '@mantine/core';
 
-export function meta() {
-  return [
-    { title: "Announcing our $100M Series B funding round - Average Database Blog" },
-    { name: "description", content: "Read about our latest funding round and our groundbreaking authentication plans!" },
-  ];
-}
+export const Route = createFileRoute("/blog/oops-we-did-it-again")({
+  head: () => ({
+    meta: [
+      {
+        title:
+          "Announcing our $100M Series B funding round - Average Database Blog",
+      },
+      {
+        name: "description",
+        content:
+          "Read about our latest funding round and our groundbreaking authentication plans!",
+      },
+    ],
+  }),
+  component: WeRichLmaoBlogPost,
+});
 
 export default function WeRichLmaoBlogPost() {
   return (
