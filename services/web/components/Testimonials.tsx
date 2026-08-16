@@ -1,4 +1,5 @@
 import { Container, Text, Title } from "@mantine/core";
+import { testimonialAvatarSrc } from "../app/avatar";
 import type { Testimonial } from "../app/data/testimonials";
 
 type TestimonialsProps = {
@@ -42,11 +43,7 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
             className="group bg-white rounded-2xl shadow-lg p-5 flex flex-col transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:bg-yellow-50/10"
           >
             <div className="flex items-center gap-3 mb-5">
-              <img
-                src={t.imageUrl}
-                alt={t.name}
-                className="w-12 h-12 rounded-full flex-shrink-0"
-              />
+              <Avatar testimonial={t} className="w-12 h-12 rounded-full flex-shrink-0" />
               <div className="flex flex-col items-start min-w-0 flex-1">
                 <div className="font-semibold text-sm text-left w-full">
                   {t.name}
@@ -98,11 +95,7 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
             className="group bg-white rounded-2xl shadow px-5 py-4 flex flex-col items-start transition-all duration-200 hover:shadow-lg hover:-translate-y-1 hover:bg-yellow-50/10"
           >
             <div className="flex items-center gap-4 mb-4 w-full">
-              <img
-                src={t.imageUrl}
-                alt={t.name}
-                className="w-10 h-10 rounded-full flex-shrink-0"
-              />
+              <Avatar testimonial={t} className="w-10 h-10 rounded-full flex-shrink-0" />
               <div className="flex flex-col items-start">
                 <div className="font-semibold text-base">{t.name}</div>
                 <div className="text-gray-600 text-sm">@{t.handle}</div>
@@ -115,5 +108,28 @@ export function Testimonials({ testimonials }: TestimonialsProps) {
         ))}
       </div>
     </div>
+  );
+}
+
+function Avatar({
+  testimonial,
+  className,
+}: {
+  testimonial: Testimonial;
+  className: string;
+}) {
+  const fallbackUrl = testimonial.imageUrl;
+
+  return (
+    <img
+      src={testimonialAvatarSrc(testimonial)}
+      alt={testimonial.name}
+      className={className}
+      onError={(event) => {
+        if (event.currentTarget.src !== fallbackUrl) {
+          event.currentTarget.src = fallbackUrl;
+        }
+      }}
+    />
   );
 }

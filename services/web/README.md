@@ -11,8 +11,9 @@ Worker.
 
 The Worker runs first only for:
 
-- `/api/*`, currently used by `/api/gibs-key` as a thin proxy to the existing
-  Rust API.
+- `/api/*`, used by `/api/gibs-key` as a thin proxy to the existing Rust API
+  and by `/api/avatar/:handle` to resolve current X profile pictures for
+  testimonials (cached, with the stored snapshot as fallback).
 - `/status/incident-report-april-1-2026-control-plane-degradation`, which keeps
   the existing user-agent-dependent April Fools redirect while serving the
   prerendered incident page to link-preview bots.
