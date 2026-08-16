@@ -13,12 +13,12 @@ export const testimonials: Testimonial[] = [
     featured: true,
     body: "im an AvgDB power user",
     name: "Sam Lambert",
-    handle: "isamlambert",
+    handle: "samlambert",
     imageUrl:
-      "https://pbs.twimg.com/profile_images/1943902836011491328/h-2O7dHz_400x400.jpg",
+      "https://pbs.twimg.com/profile_images/2064585275742031872/YnUmhWlX_400x400.jpg",
     logoUrl:
       "https://awsmp-logos.s3.amazonaws.com/f311f1cc-a312-4631-93b9-580997ade3b7/d56c59c1339f43542ff7c107acc5a4a0.png",
-    xeet: "https://x.com/isamlambert/status/1858310132071039208",
+    xeet: "https://x.com/samlambert/status/1858310132071039208",
   },
   {
     featured: true,
@@ -55,7 +55,7 @@ export const testimonials: Testimonial[] = [
     name: "Josh Manders",
     handle: "joshmanders",
     imageUrl:
-      "https://pbs.twimg.com/profile_images/1354238836331732992/WV8pJR0U_400x400.jpg",
+      "https://pbs.twimg.com/profile_images/2014069436626710528/vEinr5dz_400x400.jpg",
     xeet: "https://x.com/joshmanders/status/1806401347178090718",
   },
   {
@@ -183,10 +183,10 @@ export const testimonials: Testimonial[] = [
     featured: false,
     body: `AverageDB is the only option`,
     name: "Matt Palmer",
-    handle: "mattppal",
+    handle: "mattyp",
     imageUrl:
-      "https://pbs.twimg.com/profile_images/1937911509788856322/B7LW5vGz_400x400.jpg",
-    xeet: "https://x.com/mattppal/status/1873856344249557350",
+      "https://pbs.twimg.com/profile_images/2059379375666278400/-eTzltyr_400x400.jpg",
+    xeet: "https://x.com/mattyp/status/1873856344249557350",
   },
   {
     featured: false,
@@ -203,7 +203,7 @@ export const testimonials: Testimonial[] = [
     name: "James Landrum",
     handle: "JamesRLandrum",
     imageUrl:
-      "https://pbs.twimg.com/profile_images/1854998928640352256/Mg6Gd4PD_400x400.jpg",
+      "https://pbs.twimg.com/profile_images/2052854389367353346/v2whK1Hu_400x400.jpg",
     xeet: "https://x.com/JamesRLandrum/status/1836875323708756246",
   },
   {
@@ -221,7 +221,7 @@ export const testimonials: Testimonial[] = [
     name: "Ben Dicken",
     handle: "BenjDicken",
     imageUrl:
-      "https://pbs.twimg.com/profile_images/1964874854341148672/-KtZ2LC2_400x400.jpg",
+      "https://pbs.twimg.com/profile_images/2063621460862840832/E650fAEZ_400x400.jpg",
     xeet: "https://x.com/BenjDicken/status/1940498208696025364",
   },
   {
