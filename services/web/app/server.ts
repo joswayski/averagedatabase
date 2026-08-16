@@ -1,4 +1,5 @@
 import handler from "@tanstack/react-start/server-entry";
+import { cleanupDatabase, handleApiRequest, type WorkerEnv } from "./api";
 import {
   AVATAR_CACHE_TTL_SECONDS,
   AVATAR_PATH_PREFIX,
@@ -13,14 +14,13 @@ const INCIDENT_REDIRECT_URL = "https://www.youtube.com/watch?v=KnVu-qNEcrg";
 const BOT_USER_AGENT =
   /Twitterbot|facebookexternalhit|Slackbot|LinkedInBot|Discordbot|WhatsApp|Googlebot|bingbot|Applebot/i;
 
-type WorkerEnv = {
-  ASSETS: {
-    fetch(request: Request): Promise<Response>;
-  };
-};
-
 type WorkerContext = {
   waitUntil(promise: Promise<unknown>): void;
+};
+
+type ScheduledEvent = {
+  cron: string;
+  scheduledTime: number;
 };
 
 type WorkerCacheStorage = CacheStorage & {
@@ -33,6 +33,10 @@ export default {
 
     if (url.pathname.startsWith(AVATAR_PATH_PREFIX)) {
       return handleAvatarRequest(request, url, ctx);
+    }
+
+    if (url.pathname.startsWith("/api/")) {
+      return handleApiRequest(request, env, ctx);
     }
 
     if (url.pathname === INCIDENT_PATH) {
@@ -58,6 +62,10 @@ export default {
 
     return handler.fetch(request);
   },
+
+  async scheduled(_event: ScheduledEvent, env: WorkerEnv, _ctx: WorkerContext) {
+    await cleanupDatabase(env.DB);
+  },
 };
 
 function avatarCache(): Cache | undefined {
@@ -65,7 +73,9 @@ function avatarCache(): Cache | undefined {
 }
 
 function avatarCacheKey(origin: string, handle: string): Request {
-  return new Request(new URL(`${AVATAR_PATH_PREFIX}${handle.toLowerCase()}`, origin));
+  return new Request(
+    new URL(`${AVATAR_PATH_PREFIX}${handle.toLowerCase()}`, origin),
+  );
 }
 
 async function handleAvatarRequest(

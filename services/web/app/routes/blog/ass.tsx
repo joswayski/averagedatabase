@@ -87,17 +87,15 @@ export default function SpareChangeRoundBlogPost() {
             </p>
 
             <p className="text-lg text-gray-700 leading-relaxed mb-4">
-              When you sign up for AvgDB, you now get a database with all the
-              usual features, plus AvgAuth if you don't know how JWTs work,
-              alongisde our great, big, beutiful ASS. What's even cooler is that
-              these services integrate seamlessly if you send the correct API
-              calls, so you don't need to sign up for yet another vendor just
-              for your storage requirements.
+              When you get an AvgDB API key, you now get a database with all the
+              usual features alongside our great, big, beautiful ASS. The same
+              key works for both, so you don't need to sign up for yet another
+              vendor just for your storage requirements.
             </p>
 
             <p className="text-lg text-gray-700 leading-relaxed mb-4">
-              Our ASS is secure, functional, and comes with our signature
-              branding touch. You can use it to store your files, documents,
+              Our ASS is secure, functional, and no longer vandalizes your
+              uploads with our logo. You can use it to store files, documents,
               images, and more. We've worked our ASS off to make sure it's both
               reliable and affordable.
             </p>
@@ -107,16 +105,15 @@ export default function SpareChangeRoundBlogPost() {
             </h3>
 
             <p className="text-lg text-gray-700 leading-relaxed mb-4">
-              Our Average Storage Service sits behind the same authentication
-              system as the rest of AvgDB. Any requests with a valid API key are
-              authenticated and passed to the storage API.
+              Our Average Storage Service uses the same API keys as the rest of
+              AvgDB. Requests with a valid key are passed to the storage API.
             </p>
 
             <p className="text-lg text-gray-700 leading-relaxed mb-4">
               We've implemented a secure multi-tenant system where files are
-              prefixed with a hash of the API key that created them. This
-              ensures that users can only access their own files, preventing any
-              cross-account access.
+              associated with a hash of the API key that created them. This
+              ensures that API keys can only access their own private files,
+              preventing cross-key access.
             </p>
 
             <p className="text-lg text-gray-700 leading-relaxed mb-4">
@@ -125,12 +122,12 @@ export default function SpareChangeRoundBlogPost() {
 
             <Code block className="mb-4">
               {`# Upload a private file (default)
-curl -X POST https://api.averagedatabase.com/yeet \\
+curl -X POST https://averagedatabase.com/api/yeet \\
   -H "x-averagedb-api-key: YOUR_API_KEY" \\
   -F "file=@/path/to/your/file.pdf"
 
 # Upload a public file (accessible without API key)
-curl -X POST https://api.averagedatabase.com/yeet \\
+curl -X POST https://averagedatabase.com/api/yeet \\
   -H "x-averagedb-api-key: YOUR_API_KEY" \\
   -F "public=true" \\
   -F "file=@/path/to/your/file.pdf"`}
@@ -143,17 +140,17 @@ curl -X POST https://api.averagedatabase.com/yeet \\
 
             <Code block className="mb-4">
               {`{
-  "message": "Successfully stored 2 files in our ultra-secure ASS! Private files require API key to access.",
+  "message": "Successfully stored 2 file(s) in our ultra-secure ASS! Private files require the uploading API key to access.",
   "files": [
     {
       "file_id": "hQZXIKNqpkq1ouRcyBm0",
-      "file_url": "https://api.averagedatabase.com/ass/hQZXIKNqpkq1ouRcyBm0",
+      "file_url": "https://averagedatabase.com/api/ass/hQZXIKNqpkq1ouRcyBm0",
       "filename": "important_document.pdf",
       "size_bytes": 524288
     },
     {
       "file_id": "bjJn5TGjXk2VN28vPbtQ",
-      "file_url": "https://api.averagedatabase.com/ass/bjJn5TGjXk2VN28vPbtQ",
+      "file_url": "https://averagedatabase.com/api/ass/bjJn5TGjXk2VN28vPbtQ",
       "filename": "profile_picture.png",
       "size_bytes": 327680
     }
@@ -163,51 +160,15 @@ curl -X POST https://api.averagedatabase.com/yeet \\
             </Code>
 
             <h3 className="text-2xl font-bold text-gray-900 mb-4 mt-10">
-              Content Processing
+              Content Non-Processing
             </h3>
 
             <p className="text-lg text-gray-700 leading-relaxed mb-4">
-              One of our unique features is automatic content processing. Every
-              file uploaded to our ASS is automatically branded with our logo:
+              After a strategic reorganization of our value-add pipeline, files
+              are now stored in R2 exactly as uploaded. We validate the filename
+              extension, enforce a 10 MB limit per request, and then bravely
+              leave the bytes alone.
             </p>
-
-            <div className="mb-4 space-y-6">
-              <div>
-                <p className="text-gray-900 font-bold">
-                  Images (JPG, PNG, GIF):
-                </p>
-                <p className="text-lg text-gray-700 leading-relaxed">
-                  Our logo is overlaid in the center at 75% of the image width
-                  with semi-transparency.
-                </p>
-              </div>
-
-              <div>
-                <p className="text-gray-900 font-bold">PDFs:</p>
-                <p className="text-lg text-gray-700 leading-relaxed">
-                  We add our logo as a new page at the beginning, between each
-                  existing page, and at the end.
-                </p>
-              </div>
-
-              <div>
-                <p className="text-gray-900 font-bold">Text files:</p>
-                <p className="text-lg text-gray-700 leading-relaxed">
-                  ASCII art of our logo is prepended to the content.
-                </p>
-              </div>
-
-              <div>
-                <p className="text-gray-900 font-bold">JSON:</p>
-                <p className="text-lg text-gray-700 leading-relaxed">
-                  We add an{" "}
-                  <code className="bg-gray-100 px-1 py-0.5 rounded">
-                    _avgdb_watermark
-                  </code>{" "}
-                  field with our branding information.
-                </p>
-              </div>
-            </div>
 
             <h3 className="text-2xl font-bold text-gray-900 mb-4 mt-10">
               Data Retention
@@ -216,9 +177,10 @@ curl -X POST https://api.averagedatabase.com/yeet \\
             <p className="text-lg text-gray-700 leading-relaxed mb-4">
               While most enterprise systems are required to retain data for
               extended periods (often 7+ years), we've taken a more efficient
-              approach. Files are automatically deleted after 24 hours or when
-              total storage exceeds 10GB. This ensures optimal performance and
-              keeps our storage costs low, well within our $21.97 budget.
+              approach. Files stop being available after three days. An R2
+              lifecycle rule performs the physical deletion shortly afterward,
+              which keeps our storage costs low and our compliance department
+              unemployed.
             </p>
 
             <h3 className="text-2xl font-bold text-gray-900 mb-4 mt-10">
@@ -227,22 +189,10 @@ curl -X POST https://api.averagedatabase.com/yeet \\
 
             <div className="mb-4 space-y-6">
               <div>
-                <p className="text-gray-900 font-bold">
-                  Improved Branding Options:
-                </p>
+                <p className="text-gray-900 font-bold">Fewer Features:</p>
                 <p className="text-lg text-gray-700 leading-relaxed">
-                  We're working on allowing users to adjust the transparency
-                  level of our logo on their files (from 50% to 95% opacity).
-                </p>
-              </div>
-
-              <div>
-                <p className="text-gray-900 font-bold">
-                  Enterprise Branding Removal:
-                </p>
-                <p className="text-lg text-gray-700 leading-relaxed">
-                  Enterprise users may soon be able to remove our branding
-                  entirely as a premium add-on ($999/month).
+                  We remain committed to not processing, resizing, optimizing,
+                  scanning, transcoding, or otherwise touching your files.
                 </p>
               </div>
 
@@ -250,16 +200,15 @@ curl -X POST https://api.averagedatabase.com/yeet \\
                 <p className="text-gray-900 font-bold">Extended Retention:</p>
                 <p className="text-lg text-gray-700 leading-relaxed">
                   If we can secure additional funding (perhaps as much as $30),
-                  we may extend file retention to 48 hours.
+                  we may consider a fourth day.
                 </p>
               </div>
 
               <div>
                 <p className="text-gray-900 font-bold">More File Types:</p>
                 <p className="text-lg text-gray-700 leading-relaxed">
-                  We're exploring ways to brand additional file formats like
-                  audio files (with periodic "AvgDB" whispers) and video files
-                  (with our logo watermark).
+                  We'll add formats when we can do so without learning anything
+                  about media processing.
                 </p>
               </div>
             </div>
