@@ -14,13 +14,7 @@ import {
   Grid,
   Accordion,
 } from "@mantine/core";
-import {
-  IconBrandGithub,
-  IconDatabase,
-  IconLock,
-  IconChevronRight,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconDatabase, IconChevronRight, IconTrash } from "@tabler/icons-react";
 
 export const Route = createFileRoute("/docs/")({
   head: () => ({
@@ -35,7 +29,7 @@ export const Route = createFileRoute("/docs/")({
   component: Docs,
 });
 
-// Import ads from main.rs
+// Keep the examples appropriately ad-supported.
 const ADS = [
   "Tempur-Pedic: Experience the ultimate comfort with Tempur-Pedic mattresses.",
   "Glade: Freshen up your home with Glade air fresheners.",
@@ -60,7 +54,7 @@ type Endpoint = {
   description: string;
   request: null | string | Record<string, any>;
   response: Record<string, any> | string;
-  category: "database" | "auth" | "storage";
+  category: "database" | "storage";
 };
 
 const databaseEndpoints: Endpoint[] = [
@@ -78,13 +72,13 @@ const databaseEndpoints: Endpoint[] = [
   {
     method: "POST",
     path: "/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
-    description: "Add an item to the database",
+    description: "Add a value up to 1 MB. Values expire after three days.",
     request: {
       data: "add your data here",
     },
     response: {
       message: "Great success!",
-      key: "442104:m0OSzCNyCifpj3mAHGUd",
+      key: "avg_123456:m0OSzCNyCifpj3mAHGUd",
       brought_to_you_by: getRandomAd(),
     },
     category: "database",
@@ -93,7 +87,7 @@ const databaseEndpoints: Endpoint[] = [
     method: "GET",
     path: "/gibs-item",
     description: "Retrieve an item from the database",
-    request: "?key=442104:m0OSzCNyCifpj3mAHGUd",
+    request: "?key=avg_123456:m0OSzCNyCifpj3mAHGUd",
     response: {
       value: "add your data here",
       brought_to_you_by: getRandomAd(),
@@ -106,110 +100,10 @@ const databaseEndpoints: Endpoint[] = [
     description: "Get a new API key",
     request: null,
     response: {
-      api_key: "123456",
+      api_key: "avg_123456",
       brought_to_you_by: getRandomAd(),
     },
     category: "database",
-  },
-];
-
-const authEndpoints: Endpoint[] = [
-  {
-    method: "POST",
-    path: "/increase-valuation",
-    description: "Create a new user",
-    request: {
-      email: "user@example.com",
-      password: "password",
-      subscription_tier: "poor",
-    },
-    response: {
-      message: "User Created!",
-      user_id: "random_user_id",
-      subscription_tier: "poor",
-      brought_to_you_by: getRandomAd(),
-    },
-    category: "auth",
-  },
-  {
-    method: "POST",
-    path: "/let-me-in",
-    description: "Login endpoint",
-    request: {
-      email: "user@example.com",
-      password: "password",
-    },
-    response: {
-      message: "Login successful! Don't share this session token with anyone!",
-      token: "user_id:random_string",
-      expires_at: 1234567890,
-      brought_to_you_by: getRandomAd(),
-    },
-    category: "auth",
-  },
-  {
-    method: "POST",
-    path: "/get-out",
-    description: "Logout endpoint",
-    request: {
-      user_id: "random_user_id",
-    },
-    response: {
-      message: "Successfully logged out!",
-      brought_to_you_by: getRandomAd(),
-    },
-    category: "auth",
-  },
-  {
-    method: "GET",
-    path: "/gibs-user",
-    description: "Get user information",
-    request: "?user_id=random_user_id",
-    response: {
-      user: {
-        id: "random_user_id",
-        email: "user@example.com",
-        subscription_tier: "poor",
-        is_logged_out: false,
-      },
-      brought_to_you_by: getRandomAd(),
-    },
-    category: "auth",
-  },
-  {
-    method: "GET",
-    path: "/gibs-all-users",
-    description: "Get all users in organization",
-    request: null,
-    response: {
-      users: [
-        {
-          id: "random_user_id",
-          email: "user@example.com",
-          subscription_tier: "poor",
-        },
-      ],
-      brought_to_you_by: getRandomAd(),
-      message:
-        "If you're exporting your data to roll your own auth you gotta pay $1,000 per user you export",
-    },
-    category: "auth",
-  },
-  {
-    method: "POST",
-    path: "/validate-session",
-    description: "Validate a session token",
-    request: {
-      token: "user_id:random_string",
-    },
-    response: {
-      is_valid: true,
-      user_id: "random_user_id",
-      expires_at: 1234567890,
-      message: "Session is valid",
-      brought_to_you_by: getRandomAd(),
-    },
-    category: "auth",
   },
 ];
 
@@ -218,7 +112,7 @@ const storageEndpoints: Endpoint[] = [
     method: "POST",
     path: "/yeet",
     description:
-      "Upload files to our ultra-secure storage ASS. Public files can be accessed at: https://api.averagedatabase.com/ass/{file_id}",
+      "Upload up to 10 MB of files to our ultra-secure storage ASS. Public files can be accessed at https://averagedatabase.com/api/ass/{file_id}. Files expire after three days.",
     request:
       "multipart/form-data with file field(s) and optional public=true/false",
     response: {
@@ -226,13 +120,15 @@ const storageEndpoints: Endpoint[] = [
       files: [
         {
           file_id: "m0OSzCNyCifpj3mAHGUd",
-          file_url: "https://api.averagedatabase.com/ass/m0OSzCNyCifpj3mAHGUd",
+          file_url:
+            "https://averagedatabase.com/api/ass/m0OSzCNyCifpj3mAHGUd",
           filename: "document.pdf",
           size_bytes: 1048576,
         },
         {
           file_id: "a1BCdefGHIjkLMnoPQr",
-          file_url: "https://api.averagedatabase.com/ass/a1BCdefGHIjkLMnoPQr",
+          file_url:
+            "https://averagedatabase.com/api/ass/a1BCdefGHIjkLMnoPQr",
           filename: "image.jpg",
           size_bytes: 1048576,
         },
@@ -254,7 +150,6 @@ const storageEndpoints: Endpoint[] = [
 
 const allEndpoints = [
   ...databaseEndpoints,
-  ...authEndpoints,
   ...storageEndpoints,
 ];
 
@@ -264,12 +159,6 @@ const categories = [
     icon: IconDatabase,
     endpoints: databaseEndpoints,
     description: "Core database operations for storing and retrieving data",
-  },
-  {
-    label: "Authentication",
-    icon: IconLock,
-    endpoints: authEndpoints,
-    description: "User management, authentication, and session handling",
   },
   {
     label: "Storage (ASS)",
@@ -427,7 +316,7 @@ export default function Docs() {
                 API Documentation
               </Title>
               <Text size="lg" mb="md">
-                Send requests to <Code>https://api.averagedatabase.com</Code>{" "}
+                Send requests to <Code>https://averagedatabase.com/api</Code>{" "}
                 with the header <Code>x-averagedb-api-key</Code> containing your
                 API key.
               </Text>
@@ -465,31 +354,31 @@ export default function Docs() {
                     <Divider label="Example Usage" labelPosition="left" />
                     <Code block>
                       {`# Upload a single PRIVATE file (default)
-curl -X POST https://api.averagedatabase.com/yeet \\
+curl -X POST https://averagedatabase.com/api/yeet \\
   -H "x-averagedb-api-key: YOUR_API_KEY" \\
   -F "file=@/path/to/your/file.pdf"
 
 # Upload a PUBLIC file (accessible without API key)
-curl -X POST https://api.averagedatabase.com/yeet \\
+curl -X POST https://averagedatabase.com/api/yeet \\
   -H "x-averagedb-api-key: YOUR_API_KEY" \\
   -F "public=true" \\
   -F "file=@/path/to/your/file.pdf"
 
 # Upload multiple files (all public)
-curl -X POST https://api.averagedatabase.com/yeet \\
+curl -X POST https://averagedatabase.com/api/yeet \\
   -H "x-averagedb-api-key: YOUR_API_KEY" \\
   -F "public=true" \\
-  -F "file1=@/path/to/file1.jpg" \\
-  -F "file2=@/path/to/file2.png" \\
-  -F "file3=@/path/to/file3.mp4"
+  -F "file=@/path/to/file1.jpg" \\
+  -F "file=@/path/to/file2.png" \\
+  -F "file=@/path/to/file3.mp4"
 
 # Response will include an array of file IDs and URLs:
 {
   "message": "Successfully stored 3 file(s) in our ultra-secure ASS!",
   "files": [
-    { "file_id": "abc123", "file_url": "https://api.averagedatabase.com/ass/abc123", "filename": "file1.jpg", "size_bytes": 1024000 },
-    { "file_id": "def456", "file_url": "https://api.averagedatabase.com/ass/def456", "filename": "file2.png", "size_bytes": 2048000 },
-    { "file_id": "ghi789", "file_url": "https://api.averagedatabase.com/ass/ghi789", "filename": "file3.mp4", "size_bytes": 73728 }
+    { "file_id": "abc123", "file_url": "https://averagedatabase.com/api/ass/abc123", "filename": "file1.jpg", "size_bytes": 1024000 },
+    { "file_id": "def456", "file_url": "https://averagedatabase.com/api/ass/def456", "filename": "file2.png", "size_bytes": 2048000 },
+    { "file_id": "ghi789", "file_url": "https://averagedatabase.com/api/ass/ghi789", "filename": "file3.mp4", "size_bytes": 73728 }
   ],
   "brought_to_you_by": "Ad message here"
 }`}
@@ -504,10 +393,10 @@ curl -X POST https://api.averagedatabase.com/yeet \\
                     <Divider label="Example Usage" labelPosition="left" />
                     <Code block>
                       {`# Retrieve a public file (no API key required)
-curl -X GET "https://api.averagedatabase.com/ass/abc123"
+curl -X GET "https://averagedatabase.com/api/ass/abc123"
 
 # Retrieve a private file (requires API key)
-curl -X GET "https://api.averagedatabase.com/ass/abc123" \\
+curl -X GET "https://averagedatabase.com/api/ass/abc123" \\
   -H "x-averagedb-api-key: YOUR_API_KEY"
 `}
                     </Code>

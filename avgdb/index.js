@@ -5,7 +5,7 @@ const figlet = require("figlet");
 
 const getApiKey = async () => {
   try {
-    const response = await fetch("https://api.averagedatabase.com/gibs-key", {
+    const response = await fetch("https://averagedatabase.com/api/gibs-key", {
       method: "POST",
     });
 

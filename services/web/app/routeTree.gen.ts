@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as R404RouteImport } from './routes/404'
 import { Route as BlogRouteRouteImport } from './routes/blog/route'
 import { Route as DocsRouteRouteImport } from './routes/docs/route'
-import { Route as ApiGibsKeyRouteImport } from './routes/api/gibs-key'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as BlogAssRouteImport } from './routes/blog/ass'
 import { Route as BlogOopsWeDidItAgainRouteImport } from './routes/blog/oops-we-did-it-again'
@@ -40,11 +39,6 @@ const BlogRouteRoute = BlogRouteRouteImport.update({
 const DocsRouteRoute = DocsRouteRouteImport.update({
   id: '/docs',
   path: '/docs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiGibsKeyRoute = ApiGibsKeyRouteImport.update({
-  id: '/api/gibs-key',
-  path: '/api/gibs-key',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogIndexRoute = BlogIndexRouteImport.update({
@@ -89,7 +83,6 @@ export interface FileRoutesByFullPath {
   '/blog': typeof BlogRouteRouteWithChildren
   '/docs': typeof DocsRouteRouteWithChildren
   '/404': typeof R404Route
-  '/api/gibs-key': typeof ApiGibsKeyRoute
   '/blog/ass': typeof BlogAssRoute
   '/blog/oops-we-did-it-again': typeof BlogOopsWeDidItAgainRoute
   '/blog/we-rich-lmao': typeof BlogWeRichLmaoRoute
@@ -101,7 +94,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/404': typeof R404Route
-  '/api/gibs-key': typeof ApiGibsKeyRoute
   '/blog/ass': typeof BlogAssRoute
   '/blog/oops-we-did-it-again': typeof BlogOopsWeDidItAgainRoute
   '/blog/we-rich-lmao': typeof BlogWeRichLmaoRoute
@@ -116,7 +108,6 @@ export interface FileRoutesById {
   '/blog': typeof BlogRouteRouteWithChildren
   '/docs': typeof DocsRouteRouteWithChildren
   '/404': typeof R404Route
-  '/api/gibs-key': typeof ApiGibsKeyRoute
   '/blog/ass': typeof BlogAssRoute
   '/blog/oops-we-did-it-again': typeof BlogOopsWeDidItAgainRoute
   '/blog/we-rich-lmao': typeof BlogWeRichLmaoRoute
@@ -132,7 +123,6 @@ export interface FileRouteTypes {
     | '/blog'
     | '/docs'
     | '/404'
-    | '/api/gibs-key'
     | '/blog/ass'
     | '/blog/oops-we-did-it-again'
     | '/blog/we-rich-lmao'
@@ -144,7 +134,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/404'
-    | '/api/gibs-key'
     | '/blog/ass'
     | '/blog/oops-we-did-it-again'
     | '/blog/we-rich-lmao'
@@ -158,7 +147,6 @@ export interface FileRouteTypes {
     | '/blog'
     | '/docs'
     | '/404'
-    | '/api/gibs-key'
     | '/blog/ass'
     | '/blog/oops-we-did-it-again'
     | '/blog/we-rich-lmao'
@@ -173,7 +161,6 @@ export interface RootRouteChildren {
   BlogRouteRoute: typeof BlogRouteRouteWithChildren
   DocsRouteRoute: typeof DocsRouteRouteWithChildren
   R404Route: typeof R404Route
-  ApiGibsKeyRoute: typeof ApiGibsKeyRoute
   StatusIncidentReportApril12026ControlPlaneDegradationRoute: typeof StatusIncidentReportApril12026ControlPlaneDegradationRoute
   StatusIndexRoute: typeof StatusIndexRoute
 }
@@ -206,13 +193,6 @@ declare module '@tanstack/react-router' {
       path: '/docs'
       fullPath: '/docs'
       preLoaderRoute: typeof DocsRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/gibs-key': {
-      id: '/api/gibs-key'
-      path: '/api/gibs-key'
-      fullPath: '/api/gibs-key'
-      preLoaderRoute: typeof ApiGibsKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog/': {
@@ -302,7 +282,6 @@ const rootRouteChildren: RootRouteChildren = {
   BlogRouteRoute: BlogRouteRouteWithChildren,
   DocsRouteRoute: DocsRouteRouteWithChildren,
   R404Route: R404Route,
-  ApiGibsKeyRoute: ApiGibsKeyRoute,
   StatusIncidentReportApril12026ControlPlaneDegradationRoute:
     StatusIncidentReportApril12026ControlPlaneDegradationRoute,
   StatusIndexRoute: StatusIndexRoute,
