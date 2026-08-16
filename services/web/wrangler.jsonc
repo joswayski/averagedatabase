@@ -4,6 +4,8 @@
   "main": "./app/server.ts",
   "compatibility_date": "2026-08-15",
   "compatibility_flags": ["nodejs_compat"],
+  // Keep dashboard plaintext vars. wrangler deploy deletes them otherwise.
+  "keep_vars": true,
   "assets": {
     "binding": "ASSETS",
     "html_handling": "drop-trailing-slash",
