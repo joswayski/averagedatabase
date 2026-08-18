@@ -1,6 +1,7 @@
 extern crate serde_derive;
 
 mod ass;
+mod site;
 
 use rand::{distributions::Alphanumeric, Rng};
 use serde_derive::{Deserialize, Serialize};
@@ -16,7 +17,7 @@ use std::{collections::HashMap, ops::Deref};
 
 use axum::{
     extract::{DefaultBodyLimit, Extension, Multipart, Path as AxumPath, Query, Request},
-    http::StatusCode,
+    http::{header, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Json, Response},
     routing::{get, post},
@@ -425,12 +426,12 @@ async fn main() {
         Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(10000).unwrap())));
 
     let ass = ass::Ass::from_env();
+    let static_dir = site::static_dir();
 
     let api = Router::new()
-        // k8s check
         .route("/health", get(health))
-        .route("/", get(root))
         .route("/u-up", get(health2))
+        .route("/avatar/:handle", get(site::avatar))
         .route(
             "/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
             post(add_item).layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
@@ -477,19 +478,26 @@ async fn main() {
             get(retrieve_file)
                 .layer(ServiceBuilder::new().layer(middleware::from_fn(check_for_key))),
         )
-        .route("/ass/:file_id", get(get_public_file));
+        .route("/ass/:file_id", get(get_public_file))
+        .layer(middleware::from_fn(default_api_cache))
+        .layer(middleware::from_fn(sorry_bud))
+        .layer(DefaultBodyLimit::max(10 * 1024 * 1024));
 
     let app = Router::new()
-        .merge(api.clone())
+        .route("/health", get(health))
+        .route(
+            "/status/incident-report-april-1-2026-control-plane-degradation",
+            get(site::incident),
+        )
         .nest("/api", api)
+        .fallback(site::static_file)
+        .with_state(static_dir)
         .layer(
             ServiceBuilder::new()
                 .layer(Extension(kv_cache.clone()))
                 .layer(Extension(auth_cache.clone()))
                 .layer(Extension(rate_limit_cache.clone()))
-                .layer(Extension(ass))
-                .layer(DefaultBodyLimit::max(10 * 1024 * 1024))
-                .layer(middleware::from_fn(sorry_bud)),
+                .layer(Extension(ass)),
         );
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
@@ -499,8 +507,15 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn root() -> &'static str {
-    "Are you an idiot? Did you forget to look at the docs?"
+async fn default_api_cache(req: Request, next: Next) -> Response {
+    let mut response = next.run(req).await;
+    if !response.headers().contains_key(header::CACHE_CONTROL) {
+        response.headers_mut().insert(
+            header::CACHE_CONTROL,
+            header::HeaderValue::from_static("private, no-store"),
+        );
+    }
+    response
 }
 
 #[derive(Serialize)]
@@ -509,8 +524,11 @@ struct HealthResponse {
     brought_to_you_by: String,
 }
 
-async fn health() -> &'static str {
-    "Yeah"
+async fn health() -> impl IntoResponse {
+    (
+        [(header::CACHE_CONTROL, "private, no-store")],
+        "Yeah",
+    )
 }
 
 async fn health2() -> Response {
@@ -647,20 +665,14 @@ async fn add_item(
     (StatusCode::CREATED, Json(res)).into_response()
 }
 
-const SKIP_DELAY_PATH: [&str; 8] = [
-    "/health",
-    "/u-up",
-    "/",
-    "/gibs-key",
-    "/api/health",
-    "/api/u-up",
-    "/api/",
-    "/api/gibs-key",
-];
-
 async fn sorry_bud(req: Request, next: Next) -> Result<Response, Response> {
     let path = req.uri().path();
-    if SKIP_DELAY_PATH.contains(&path) {
+    if matches!(
+        path,
+        "/health" | "/u-up" | "/gibs-key" | "/api/health" | "/api/u-up" | "/api/gibs-key"
+    ) || path.starts_with("/api/avatar")
+        || path.starts_with("/avatar")
+    {
         return Ok(next.run(req).await);
     }
 
@@ -1566,6 +1578,7 @@ async fn get_public_file(
         return Response::builder()
             .status(StatusCode::OK)
             .header("Content-Type", file.content_type)
+            .header("Cache-Control", "public, max-age=3600")
             .header("X-Powered-By", "AvgDB ASS on a Railway bucket")
             .body(axum::body::Body::from(file.bytes))
             .unwrap()
