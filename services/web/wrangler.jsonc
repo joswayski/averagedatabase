@@ -6,6 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
   // Keep dashboard plaintext vars. wrangler deploy deletes them otherwise.
   "keep_vars": true,
+  "workers_dev": true,
   "vars": {
     "API_UPSTREAM": "https://averagedatabase-production.up.railway.app"
   },
@@ -18,6 +19,9 @@
       "/status/incident-report-april-1-2026-control-plane-degradation"
     ]
   },
+  "routes": [
+    { "pattern": "averagedatabase.com", "custom_domain": true }
+  ],
   "observability": {
     "enabled": true
   },
