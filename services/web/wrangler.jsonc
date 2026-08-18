@@ -7,7 +7,7 @@
   // Keep dashboard plaintext vars. wrangler deploy deletes them otherwise.
   "keep_vars": true,
   "vars": {
-    "API_UPSTREAM": "https://api-production-ef4d.up.railway.app"
+    "API_UPSTREAM": "https://averagedatabase-production.up.railway.app"
   },
   "assets": {
     "binding": "ASSETS",
