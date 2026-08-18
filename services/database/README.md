@@ -1,5 +1,5 @@
 ### Average Database data
 
-The disposable key/value schema now lives in the web Worker's
-[D1 migrations](../web/migrations). The old in-process Rust cache has been
-retired.
+Disposable keys, values, and upload metadata live in SQLite next to the Rust
+API. Uploaded files live on disk beside that database. On Railway both belong
+on the service volume mounted at `/data`.

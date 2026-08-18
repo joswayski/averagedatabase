@@ -1,5 +1,5 @@
 import handler from "@tanstack/react-start/server-entry";
-import { cleanupDatabase, handleApiRequest, type WorkerEnv } from "./api";
+import { proxyApiRequest, type WorkerEnv } from "./api";
 import {
   AVATAR_CACHE_TTL_SECONDS,
   AVATAR_PATH_PREFIX,
@@ -18,11 +18,6 @@ type WorkerContext = {
   waitUntil(promise: Promise<unknown>): void;
 };
 
-type ScheduledEvent = {
-  cron: string;
-  scheduledTime: number;
-};
-
 type WorkerCacheStorage = CacheStorage & {
   default?: Cache;
 };
@@ -36,7 +31,7 @@ export default {
     }
 
     if (url.pathname.startsWith("/api/")) {
-      return handleApiRequest(request, env, ctx);
+      return proxyApiRequest(request, env);
     }
 
     if (url.pathname === INCIDENT_PATH) {
@@ -61,10 +56,6 @@ export default {
     }
 
     return handler.fetch(request);
-  },
-
-  async scheduled(_event: ScheduledEvent, env: WorkerEnv, _ctx: WorkerContext) {
-    await cleanupDatabase(env.DB);
   },
 };
 

@@ -6,6 +6,9 @@
   "compatibility_flags": ["nodejs_compat"],
   // Keep dashboard plaintext vars. wrangler deploy deletes them otherwise.
   "keep_vars": true,
+  "vars": {
+    "API_UPSTREAM": "https://api-production-ef4d.up.railway.app"
+  },
   "assets": {
     "binding": "ASSETS",
     "html_handling": "drop-trailing-slash",
@@ -14,23 +17,6 @@
       "/api/*",
       "/status/incident-report-april-1-2026-control-plane-degradation"
     ]
-  },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "average-database",
-      "database_id": "a18d3e62-c5b8-4dea-8e33-0ade2dcc144f",
-      "migrations_dir": "migrations"
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "UPLOADS",
-      "bucket_name": "average-database-uploads"
-    }
-  ],
-  "triggers": {
-    "crons": ["0 * * * *"]
   },
   "observability": {
     "enabled": true
