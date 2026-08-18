@@ -8,10 +8,10 @@ The only database built from the ground for the average developer.
 
 ### Hosting
 
-The marketing site is a prerendered TanStack Start app. The Worker still
-handles testimonial avatars and the request-dependent incident redirect, then
-proxies `/api/*` to the Rust service on Railway. Disposable keys and values
-live in SQLite on a volume; uploads live on the same disk.
+The marketing site is a prerendered TanStack Start app on Cloudflare. The
+Worker handles testimonial avatars and the April Fools incident redirect, then
+proxies `/api/*` to the Rust service on Railway. Keys and values live in an
+in-memory LRU cache. ASS files live in a Railway bucket.
 
 ### Support
 

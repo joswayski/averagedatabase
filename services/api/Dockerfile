@@ -13,8 +13,7 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY --from=builder /app/target/release/api /app/api
+COPY src/avgdblogo.png ./src/
 
-ENV DATA_DIR=/data
 EXPOSE 8080
-
 CMD ["./api"]

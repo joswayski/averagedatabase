@@ -1,5 +1,6 @@
 ### Average Database data
 
-Disposable keys, values, and upload metadata live in SQLite next to the Rust
-API. Uploaded files live on disk beside that database. On Railway both belong
-on the service volume mounted at `/data`.
+Keys and values live in an in-memory LRU cache in the Rust API. Restarting the
+process, evicting an entry, or looking at it funny will lose your data.
+
+ASS files are real. They live in the `averagedatabase-ass` Railway bucket.
