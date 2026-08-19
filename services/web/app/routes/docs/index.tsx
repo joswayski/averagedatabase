@@ -72,8 +72,7 @@ const databaseEndpoints: Endpoint[] = [
   {
     method: "POST",
     path: "/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
-    description:
-      "Add an item to the in-memory database. We will lose it. That's the feature.",
+    description: "Add a value up to 1 MB. Values expire after three days.",
     request: {
       data: "add your data here",
     },
@@ -113,7 +112,7 @@ const storageEndpoints: Endpoint[] = [
     method: "POST",
     path: "/yeet",
     description:
-      "Upload files to our ultra-secure storage ASS. Public files can be accessed at https://averagedatabase.com/api/ass/{file_id}. Unlike the database, these actually stay put.",
+      "Upload up to 10 MB of files to our ultra-secure storage ASS. Public files can be accessed at https://averagedatabase.com/api/ass/{file_id}. Files expire after three days.",
     request:
       "multipart/form-data with file field(s) and optional public=true/false",
     response: {

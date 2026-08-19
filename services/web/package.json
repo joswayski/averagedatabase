@@ -5,6 +5,8 @@
   "scripts": {
     "build": "vite build",
     "check": "npm run types:check && npm run typecheck && npm run build && wrangler deploy --dry-run",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "deploy": "npm run build && wrangler deploy",
     "dev": "vite dev",
     "preview": "npm run build && vite preview",
