@@ -8,10 +8,10 @@ The only database built from the ground for the average developer.
 
 ### Hosting
 
-The marketing site is a prerendered TanStack Start app on Cloudflare. The
-Worker handles testimonial avatars and the April Fools incident redirect, then
-proxies `/api/*` to the Rust service on Railway. Keys and values live in an
-in-memory LRU cache. ASS files live in a Railway bucket.
+The whole site is one Cloudflare Worker deployment. TanStack Start prerenders
+the public pages as static assets, while the same Worker handles the small API,
+testimonial avatars, and the request-dependent incident redirect. Disposable
+database values live in D1 and uploads live in R2.
 
 ### Support
 

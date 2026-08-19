@@ -2,4 +2,3 @@
 /node_modules/
 /.wrangler/
 /dist/
-.dev.vars

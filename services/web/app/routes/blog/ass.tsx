@@ -165,9 +165,9 @@ curl -X POST https://averagedatabase.com/api/yeet \\
 
             <p className="text-lg text-gray-700 leading-relaxed mb-4">
               After a strategic reorganization of our value-add pipeline, files
-              are now stored in object storage exactly as uploaded. We validate
-              the filename extension, enforce a 10 MB limit per request, and
-              then bravely leave the bytes alone.
+              are now stored in R2 exactly as uploaded. We validate the filename
+              extension, enforce a 10 MB limit per request, and then bravely
+              leave the bytes alone.
             </p>
 
             <h3 className="text-2xl font-bold text-gray-900 mb-4 mt-10">
@@ -177,9 +177,10 @@ curl -X POST https://averagedatabase.com/api/yeet \\
             <p className="text-lg text-gray-700 leading-relaxed mb-4">
               While most enterprise systems are required to retain data for
               extended periods (often 7+ years), we've taken a more efficient
-              approach. The key/value database lives in RAM and will forget
-              your data. ASS files live in a real bucket, because somebody
-              actually wanted those back.
+              approach. Files stop being available after three days. An R2
+              lifecycle rule performs the physical deletion shortly afterward,
+              which keeps our storage costs low and our compliance department
+              unemployed.
             </p>
 
             <h3 className="text-2xl font-bold text-gray-900 mb-4 mt-10">

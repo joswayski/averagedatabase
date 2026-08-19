@@ -17,8 +17,8 @@ const factsheet = [
         description: "Don't worry about scaling, just add your credit card"
     },
     {
-        title: "Written in Rust",
-        description: "Blazing fast and 0 bugs guaranteed"
+        title: "Runs at the edge",
+        description: "The database is now geographically closer to your bugs"
     },
     {
         title: "True open source",

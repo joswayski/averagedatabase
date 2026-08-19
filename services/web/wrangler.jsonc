@@ -7,9 +7,6 @@
   // Keep dashboard plaintext vars. wrangler deploy deletes them otherwise.
   "keep_vars": true,
   "workers_dev": true,
-  "vars": {
-    "API_UPSTREAM": "https://averagedatabase-production.up.railway.app"
-  },
   "assets": {
     "binding": "ASSETS",
     "html_handling": "drop-trailing-slash",
@@ -18,6 +15,23 @@
       "/api/*",
       "/status/incident-report-april-1-2026-control-plane-degradation"
     ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "average-database",
+      "database_id": "273f98e4-b2ee-4829-9e27-1294335012e2",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS",
+      "bucket_name": "average-database-uploads"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 * * * *"]
   },
   "routes": [
     { "pattern": "averagedatabase.com", "custom_domain": true }
