@@ -17,10 +17,6 @@ const factsheet = [
         description: "Don't worry about scaling, just add your credit card"
     },
     {
-        title: "Runs at the edge",
-        description: "The database is now geographically closer to your bugs"
-    },
-    {
         title: "True open source",
         description: "No AGPL/SSPL BS, you can host it and try to compete with us (good luck)"
     },
