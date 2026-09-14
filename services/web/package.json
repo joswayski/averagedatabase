@@ -47,7 +47,7 @@
     "react-is": "19.0.0"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.52.1",
+    "@cloudflare/vite-plugin": "^1.54.7",
     "@tailwindcss/vite": "^4.1.4",
     "@vitejs/plugin-react": "^5.2.0",
     "@types/node": "^20",
@@ -59,6 +59,6 @@
     "tailwindcss": "^4.1.4",
     "typescript": "^5.8.3",
     "vite": "^8.2.1",
-    "wrangler": "^4.123.0"
+    "wrangler": "^4.131.0"
   }
 }
