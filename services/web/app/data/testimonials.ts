@@ -15,7 +15,7 @@ export const testimonials: Testimonial[] = [
     name: "Sam Lambert",
     handle: "samlambert",
     imageUrl:
-      "https://pbs.twimg.com/profile_images/2064585275742031872/YnUmhWlX_400x400.jpg",
+      "https://pbs.twimg.com/profile_images/2100640873163915264/zI9Nh_7R_400x400.jpg",
     logoUrl:
       "https://awsmp-logos.s3.amazonaws.com/f311f1cc-a312-4631-93b9-580997ade3b7/d56c59c1339f43542ff7c107acc5a4a0.png",
     xeet: "https://x.com/samlambert/status/1858310132071039208",
@@ -203,7 +203,7 @@ export const testimonials: Testimonial[] = [
     name: "James Landrum",
     handle: "JamesRLandrum",
     imageUrl:
-      "https://pbs.twimg.com/profile_images/2052854389367353346/v2whK1Hu_400x400.jpg",
+      "https://pbs.twimg.com/profile_images/2097860070256054272/dLR30wHk_400x400.jpg",
     xeet: "https://x.com/JamesRLandrum/status/1836875323708756246",
   },
   {

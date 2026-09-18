@@ -72,10 +72,17 @@ function avatarCache(): Cache | undefined {
   return (caches as WorkerCacheStorage).default;
 }
 
-function avatarCacheKey(origin: string, handle: string): Request {
-  return new Request(
-    new URL(`${AVATAR_PATH_PREFIX}${handle.toLowerCase()}`, origin),
+function avatarCacheKey(
+  origin: string,
+  handle: string,
+  fallbackUrl: string,
+): Request {
+  const cacheUrl = new URL(
+    `${AVATAR_PATH_PREFIX}${handle.toLowerCase()}`,
+    origin,
   );
+  cacheUrl.searchParams.set("fallback", fallbackUrl);
+  return new Request(cacheUrl);
 }
 
 async function handleAvatarRequest(
@@ -104,7 +111,11 @@ async function handleAvatarRequest(
   }
 
   const cache = avatarCache();
-  const cacheKey = avatarCacheKey(url.origin, handle);
+  const cacheKey = avatarCacheKey(
+    url.origin,
+    handle,
+    testimonial.imageUrl,
+  );
   const cached = cache ? await cache.match(cacheKey) : undefined;
   if (cached) {
     return cached;
