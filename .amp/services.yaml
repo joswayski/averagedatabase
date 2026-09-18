@@ -1,0 +1,9 @@
+services:
+  web:
+    command: npm run dev -- --host 0.0.0.0 --port "$PORT"
+    cwd: services/web
+    health: /
+    review: true
+    portal:
+      title: AverageDB
+      description: AverageDB website and local API.
