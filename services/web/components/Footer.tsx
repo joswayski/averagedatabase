@@ -5,7 +5,7 @@ export function Footer() {
     <div className="mt-30 border-t bg-stone-50 border-gray-200 dark:border-dark-5">
       <div className="flex flex-col items-center justify-center p-4 md:p-6 gap-6">
         <img 
-          src="/logo-mark.png"
+          src="/logo-small.png" 
           alt="AvgDB logo" 
           className="w-16 h-16 md:w-24 md:h-24 object-contain" 
         />
