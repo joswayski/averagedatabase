@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+run_step() {
+  local label="$1"
+  shift
+  local start=$SECONDS
+
+  printf '\n==> %s\n' "$label"
+  "$@"
+  printf '<== %s completed in %ss\n' "$label" "$((SECONDS - start))"
+}
+
+command -v node >/dev/null || {
+  echo "Node.js 22 or newer is required." >&2
+  exit 1
+}
+
+node -e '
+  const major = Number(process.versions.node.split(".")[0]);
+  if (major < 22) {
+    console.error(`Node.js 22 or newer is required; found ${process.version}.`);
+    process.exit(1);
+  }
+'
+
+run_step "Install root dependencies" npm ci --no-audit --no-fund
+run_step "Install CLI dependencies" npm ci --prefix avgdb --no-audit --no-fund
+run_step "Install web dependencies" npm ci --prefix services/web --no-audit --no-fund
+run_step "Apply local D1 migrations" npm --prefix services/web run db:migrate:local
