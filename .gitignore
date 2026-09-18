@@ -1,4 +1,4 @@
 root*
-node_modules/
+avgdb/node_modules
 target/
-.amp/portals/
+
