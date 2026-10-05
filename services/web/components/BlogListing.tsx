@@ -17,6 +17,14 @@ import { IconCalendar } from "@tabler/icons-react";
 
 const blogPosts = [
   {
+    title: "AvgDB now runs on Route 53, Amazon's premier database",
+    image: "/logo.png",
+    date: "October 5, 2026",
+    slug: "route-53",
+    excerpt:
+      "We moved every API key and value into DNS TXT records so we can finally say 100% SLA.",
+  },
+  {
     title: "Average Storage Service (ASS) is now available in AvgDB",
     image:
       "https://upload.wikimedia.org/wikipedia/commons/b/bc/Amazon-S3-Logo.svg",

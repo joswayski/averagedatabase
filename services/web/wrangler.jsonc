@@ -16,6 +16,9 @@
       "/status/incident-report-april-1-2026-control-plane-degradation"
     ]
   },
+  // Route 53 replaces D1 once the ROUTE53_* secrets are set. D1 then only
+  // answers for keys and values from before the cutover; remove it three days
+  // after.
   "d1_databases": [
     {
       "binding": "DB",

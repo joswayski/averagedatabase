@@ -12,16 +12,51 @@ Worker.
 The Worker runs first only for:
 
 - `/api/*`, which contains the Average Database API and
-  `/api/avatar/:handle`. API keys and values use D1, uploads use R2, and avatar
-  redirects are cached with the stored snapshot as fallback.
+  `/api/avatar/:handle`. API keys, values and upload counters live in Route 53
+  (see below), uploads use R2, and avatar redirects are cached with the stored
+  snapshot as fallback.
 - `/status/incident-report-april-1-2026-control-plane-degradation`, which keeps
   the existing user-agent-dependent April Fools redirect while serving the
   prerendered incident page to link-preview bots.
 
 Unknown navigation requests use the prerendered `404.html`. An hourly Cron
-Trigger removes expired D1 rows and trims values over the 5 GB soft cap. R2's
-bucket lifecycle deletes uploads after three days; the Worker refuses expired
-objects even if lifecycle deletion has not run yet.
+Trigger removes expired Route 53 records and, when the zone nears its record
+quota, the records closest to expiring. R2's bucket lifecycle deletes uploads
+after three days; the Worker refuses expired objects even if lifecycle deletion
+has not run yet.
+
+## Route 53 storage
+
+`app/db` stores everything as TXT records in the `db.averagedatabase.com`
+hosted zone, so the database inherits Route 53's 100% SLA:
+
+- Reads ask the zone's authoritative nameservers directly over DNS (TCP), the
+  part of Route 53 the SLA covers. No AWS credentials or resolver cache are
+  involved.
+- Writes call `ChangeResourceRecordSets`. Change batches are atomic and a
+  `DELETE` must match exactly, so a write deletes and re-creates the caller's
+  API key record in the same batch as a condition check. The upload counter is
+  a compare-and-swap on the same principle.
+- Values are base64 in 255-character strings, capped at 20 KB so an item and
+  its key check fit in one request. API keys embed their expiry so a write can
+  rebuild the key record exactly.
+
+What that costs: values shrink from 1 MB to 20 KB; new values (and new keys,
+for reads) take up to a minute to propagate; the Route 53 API allows about ten
+requests a second for the whole AWS account, so writes return `503` with
+`Retry-After` when throttled; and a zone holds 10,000 records.
+
+The Worker uses Route 53 only when all five `ROUTE53_*` secrets are set
+(`ROUTE53_HOSTED_ZONE_ID`, `ROUTE53_ZONE_NAME`, `ROUTE53_NAME_SERVERS`,
+`ROUTE53_ACCESS_KEY_ID`, `ROUTE53_SECRET_ACCESS_KEY`). Until then it keeps using
+D1. Afterwards it still reads D1 for keys and values created before the cutover,
+until they expire. The zone, the narrowly scoped IAM writer and the cutover
+commands live in the infrastructure repository's
+`docs/averagedatabase-route53.md`.
+
+`npm run dev` uses an in-memory Route 53 zone that enforces the same limits.
+For `npm run preview`, put `ROUTE53_EMULATOR=true` in `.dev.vars` before
+building.
 
 ## Commands
 
@@ -30,6 +65,7 @@ npm install
 npm run dev
 npm run db:migrate:local
 npm run typecheck
+npm test
 npm run build
 npm run preview
 npm run check
@@ -39,8 +75,9 @@ npm run check
 
 ## Cloudflare deployment
 
-The deployment uses one Worker with `ASSETS`, `DB`, and `UPLOADS` bindings. To
-bootstrap those resources in a new Cloudflare account:
+The deployment uses one Worker with `ASSETS`, `DB`, and `UPLOADS` bindings plus
+the Route 53 secrets above. To bootstrap the Cloudflare resources in a new
+account:
 
 ```bash
 npx wrangler d1 create average-database
@@ -54,7 +91,7 @@ Copy the D1 ID returned by the create command into `wrangler.jsonc` before the
 first deploy. The lifecycle rule is configured on the bucket because it is not
 part of the Worker binding.
 
-API values and API keys expire after three days. Values are capped at 1 MB,
+API values and API keys expire after three days. Values are capped at 20 KB,
 upload requests at 10 MB, and upload requests at 10 per API key per hour. There
 is deliberately no user-authentication subsystem or file-branding pipeline.
 

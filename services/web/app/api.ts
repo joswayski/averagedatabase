@@ -1,10 +1,16 @@
-const RETENTION_SECONDS = 3 * 24 * 60 * 60;
-const MAX_VALUE_BYTES = 1_000_000;
+import {
+  DatabaseBusyError,
+  DatabaseFullError,
+  MAX_UPLOADS_PER_HOUR,
+  RETENTION_SECONDS,
+  createStore,
+  randomHex,
+  sha256Hex,
+  type AverageStore,
+  type StoreEnv,
+} from "./db/index.ts";
+
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
-const MAX_UPLOADS_PER_HOUR = 10;
-const DATABASE_HIGH_WATER_BYTES = 5 * 1024 * 1024 * 1024;
-const CLEANUP_BATCH_SIZE = 1_000;
-const MAX_CLEANUP_BATCHES = 20;
 const UPLOAD_PREFIX = "uploads/";
 
 const API_KEY_HEADER = "x-averagedb-api-key";
@@ -49,11 +55,10 @@ const ADS = [
   "GameStop: Do you like losing money?",
 ] as const;
 
-export type WorkerEnv = {
+export type WorkerEnv = StoreEnv & {
   ASSETS: {
     fetch(request: Request): Promise<Response>;
   };
-  DB: D1Database;
   UPLOADS: R2Bucket;
 };
 
@@ -61,8 +66,9 @@ type WorkerContext = {
   waitUntil(promise: Promise<unknown>): void;
 };
 
-type ApiKeyResult =
-  { ok: true; apiKey: string } | { ok: false; response: Response };
+type CallerResult =
+  | { ok: true; apiKey: string; trusted: boolean }
+  | { ok: false; response: Response };
 
 type StoredUploadMetadata = {
   expiresAt?: string;
@@ -93,36 +99,59 @@ export async function handleApiRequest(
 
     if (url.pathname === "/api/gibs-key") {
       return request.method === "POST"
-        ? createApiKey(env.DB)
+        ? await createApiKey(createStore(env))
         : methodNotAllowed(["POST"]);
     }
 
     if (url.pathname === ADD_ITEM_PATH) {
       return request.method === "POST"
-        ? addItem(request, env.DB)
+        ? await addItem(request, createStore(env))
         : methodNotAllowed(["POST"]);
     }
 
     if (url.pathname === "/api/gibs-item") {
       return request.method === "GET"
-        ? getItem(request, url, env.DB)
+        ? await getItem(request, url, createStore(env))
         : methodNotAllowed(["GET"]);
     }
 
     if (url.pathname === "/api/yeet") {
       return request.method === "POST"
-        ? uploadFiles(request, url, env)
+        ? await uploadFiles(request, url, env, createStore(env))
         : methodNotAllowed(["POST"]);
     }
 
     if (url.pathname.startsWith(ASS_PATH_PREFIX)) {
       return request.method === "GET" || request.method === "HEAD"
-        ? getFile(request, url, env, ctx)
+        ? await getFile(request, url, env, ctx)
         : methodNotAllowed(["GET", "HEAD"]);
     }
 
     return json({ message: "That API endpoint does not exist." }, 404);
   } catch (error) {
+    if (error instanceof DatabaseBusyError) {
+      console.warn("Average Database store is busy", error);
+      return new Response(
+        "Route 53 is rate limiting our writes. That's the price of a 100% SLA. Try again in a few seconds.",
+        {
+          status: 503,
+          headers: {
+            "Cache-Control": "private, no-store",
+            "Content-Type": "text/plain; charset=utf-8",
+            "Retry-After": "5",
+          },
+        },
+      );
+    }
+
+    if (error instanceof DatabaseFullError) {
+      console.warn("Average Database store is full", error);
+      return text(
+        "The database is full. Our hourly cleanup will make room soon.",
+        507,
+      );
+    }
+
     console.error("Average Database API request failed", error);
     return json(
       {
@@ -134,61 +163,23 @@ export async function handleApiRequest(
   }
 }
 
-export async function cleanupDatabase(db: D1Database): Promise<void> {
-  const now = unixSeconds();
-
-  await deleteInBatches(db, "items", "item_key", "expires_at <= ?", now);
-  await deleteInBatches(db, "api_keys", "api_key", "expires_at <= ?", now);
-  await deleteUploadLimitsInBatches(db, now - 2 * 60 * 60);
-
-  const sizeProbe = await db.prepare("SELECT 1").run();
-  let databaseBytes = Number(sizeProbe.meta.size_after ?? 0);
-
-  for (
-    let batch = 0;
-    databaseBytes > DATABASE_HIGH_WATER_BYTES && batch < MAX_CLEANUP_BATCHES;
-    batch += 1
-  ) {
-    const result = await db
-      .prepare(
-        `DELETE FROM items
-         WHERE item_key IN (
-           SELECT item_key
-           FROM items
-           ORDER BY created_at ASC
-           LIMIT ?
-         )`,
-      )
-      .bind(CLEANUP_BATCH_SIZE)
-      .run();
-
-    if (Number(result.meta.changes ?? 0) === 0) {
-      break;
-    }
-
-    databaseBytes = Number(result.meta.size_after ?? databaseBytes);
-  }
+export async function cleanupDatabase(env: StoreEnv): Promise<void> {
+  await createStore(env).cleanup(unixSeconds());
 }
 
-async function createApiKey(db: D1Database): Promise<Response> {
-  const now = unixSeconds();
-  const apiKey = `avg_${crypto.randomUUID().replaceAll("-", "")}`;
-
-  await db
-    .prepare(
-      `INSERT INTO api_keys (api_key, created_at, expires_at)
-       VALUES (?, ?, ?)`,
-    )
-    .bind(apiKey, now, now + RETENTION_SECONDS)
-    .run();
+async function createApiKey(store: AverageStore): Promise<Response> {
+  const { apiKey } = await store.createApiKey(unixSeconds());
 
   return json({ api_key: apiKey, brought_to_you_by: randomAd() }, 201);
 }
 
-async function addItem(request: Request, db: D1Database): Promise<Response> {
-  const auth = await authenticate(request, db);
-  if (!auth.ok) {
-    return auth.response;
+async function addItem(
+  request: Request,
+  store: AverageStore,
+): Promise<Response> {
+  const caller = readCaller(request);
+  if (!caller.ok) {
+    return caller.response;
   }
 
   let body: unknown;
@@ -211,30 +202,23 @@ async function addItem(request: Request, db: D1Database): Promise<Response> {
   }
 
   const sizeBytes = new TextEncoder().encode(data).byteLength;
-  if (sizeBytes > MAX_VALUE_BYTES) {
+  if (sizeBytes > store.maxValueBytes) {
     return text(
-      `Value is too large. Keep it under ${MAX_VALUE_BYTES.toLocaleString()} bytes.`,
+      `Value is too large. Keep it under ${store.maxValueBytes.toLocaleString()} bytes.`,
       413,
     );
   }
 
-  const now = unixSeconds();
-  const itemKey = `${auth.apiKey}:${randomId(20)}`;
-
-  await db
-    .prepare(
-      `INSERT INTO items
-        (item_key, api_key, value, size_bytes, created_at, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-    )
-    .bind(itemKey, auth.apiKey, data, sizeBytes, now, now + RETENTION_SECONDS)
-    .run();
+  const itemKey = await store.putItem(caller, data, unixSeconds());
+  if (itemKey === null) {
+    return invalidApiKey();
+  }
 
   return json(
     {
       message: "Great success!",
       key: itemKey,
-      brought_to_you_by: randomAd(auth.apiKey),
+      brought_to_you_by: randomAd(caller.apiKey),
     },
     201,
   );
@@ -243,9 +227,9 @@ async function addItem(request: Request, db: D1Database): Promise<Response> {
 async function getItem(
   request: Request,
   url: URL,
-  db: D1Database,
+  store: AverageStore,
 ): Promise<Response> {
-  const auth = await authenticate(request, db);
+  const auth = await authenticate(request, store);
   if (!auth.ok) {
     return auth.response;
   }
@@ -259,24 +243,19 @@ async function getItem(
     return text("Query key must match api key in header", 401);
   }
 
-  const item = await db
-    .prepare(
-      `SELECT value
-       FROM items
-       WHERE item_key = ? AND api_key = ? AND expires_at > ?`,
-    )
-    .bind(itemKey, auth.apiKey, unixSeconds())
-    .first<{ value: string }>();
+  const value = await store.getItem(auth.apiKey, itemKey, unixSeconds());
 
-  if (!item) {
+  if (value === null) {
     return text(
-      "No item found with this key. It might have been deleted.. 🤷",
+      store.propagationSeconds > 0
+        ? `No item found with this key. It might have been deleted, or it's still propagating to every Route 53 nameserver, which can take up to ${store.propagationSeconds} seconds.. 🤷`
+        : "No item found with this key. It might have been deleted.. 🤷",
       404,
     );
   }
 
   return json({
-    value: item.value,
+    value,
     brought_to_you_by: randomAd(auth.apiKey),
   });
 }
@@ -285,10 +264,11 @@ async function uploadFiles(
   request: Request,
   url: URL,
   env: WorkerEnv,
+  store: AverageStore,
 ): Promise<Response> {
-  const auth = await authenticate(request, env.DB);
-  if (!auth.ok) {
-    return auth.response;
+  const caller = readCaller(request);
+  if (!caller.ok) {
+    return caller.response;
   }
 
   const contentLength = Number(request.headers.get("content-length") ?? 0);
@@ -340,8 +320,11 @@ async function uploadFiles(
     uploads.push({ file, filename });
   }
 
-  const rateLimit = await incrementUploadLimit(env.DB, auth.apiKey);
-  if (rateLimit > MAX_UPLOADS_PER_HOUR) {
+  const slot = await store.claimUploadSlot(caller, unixSeconds());
+  if (slot === "unauthorized") {
+    return invalidApiKey();
+  }
+  if (slot === "rate_limited") {
     return text(
       `Rate limit exceeded. Maximum ${MAX_UPLOADS_PER_HOUR} upload requests per hour per API key.`,
       429,
@@ -353,12 +336,12 @@ async function uploadFiles(
       .trim()
       .toLowerCase(),
   );
-  const ownerKeyHash = await sha256(auth.apiKey);
+  const ownerKeyHash = await sha256Hex(caller.apiKey);
   const expiresAt = unixSeconds() + RETENTION_SECONDS;
 
   const storedFiles = await Promise.all(
     uploads.map(async ({ file, filename }) => {
-      const fileId = randomId(32);
+      const fileId = randomHex(32);
       await env.UPLOADS.put(`${UPLOAD_PREFIX}${fileId}`, file.stream(), {
         customMetadata: {
           expiresAt: String(expiresAt),
@@ -386,7 +369,7 @@ async function uploadFiles(
       isPublic ? "" : " Private files require the uploading API key to access."
     }`,
     files: storedFiles,
-    brought_to_you_by: randomAd(auth.apiKey),
+    brought_to_you_by: randomAd(caller.apiKey),
   });
 }
 
@@ -421,12 +404,12 @@ async function getFile(
   }
 
   if (metadata.public !== "true") {
-    const auth = await authenticate(request, env.DB);
+    const auth = await authenticate(request, createStore(env));
     if (!auth.ok) {
       return auth.response;
     }
 
-    if ((await sha256(auth.apiKey)) !== metadata.ownerKeyHash) {
+    if ((await sha256Hex(auth.apiKey)) !== metadata.ownerKeyHash) {
       return text("That file belongs to somebody else. Rude.", 403);
     }
   }
@@ -445,10 +428,8 @@ async function getFile(
   });
 }
 
-async function authenticate(
-  request: Request,
-  db: D1Database,
-): Promise<ApiKeyResult> {
+// Reads the API key header. Writes check the key as part of the write itself.
+function readCaller(request: Request): CallerResult {
   const apiKey = request.headers.get(API_KEY_HEADER)?.trim() ?? "";
   if (!apiKey) {
     return {
@@ -460,95 +441,27 @@ async function authenticate(
     };
   }
 
-  if (apiKey.startsWith("enterprise-")) {
-    return { ok: true, apiKey };
-  }
-
-  const row = await db
-    .prepare(
-      "SELECT api_key FROM api_keys WHERE api_key = ? AND expires_at > ?",
-    )
-    .bind(apiKey, unixSeconds())
-    .first<{ api_key: string }>();
-
-  if (!row) {
-    return {
-      ok: false,
-      response: text("No way, Jose. Fix your API key. Figure it out.", 401),
-    };
-  }
-
-  return { ok: true, apiKey };
+  return { ok: true, apiKey, trusted: apiKey.startsWith("enterprise-") };
 }
 
-async function incrementUploadLimit(
-  db: D1Database,
-  apiKey: string,
-): Promise<number> {
-  const windowStart = Math.floor(unixSeconds() / 3600) * 3600;
-  const row = await db
-    .prepare(
-      `INSERT INTO upload_limits (api_key, window_start, count)
-       VALUES (?, ?, 1)
-       ON CONFLICT (api_key, window_start)
-       DO UPDATE SET count = count + 1
-       RETURNING count`,
-    )
-    .bind(apiKey, windowStart)
-    .first<{ count: number }>();
+async function authenticate(
+  request: Request,
+  store: AverageStore,
+): Promise<CallerResult> {
+  const caller = readCaller(request);
+  if (
+    !caller.ok ||
+    caller.trusted ||
+    (await store.isApiKeyValid(caller.apiKey, unixSeconds()))
+  ) {
+    return caller;
+  }
 
-  return Number(row?.count ?? 1);
+  return { ok: false, response: invalidApiKey() };
 }
 
-async function deleteInBatches(
-  db: D1Database,
-  table: "api_keys" | "items",
-  keyColumn: "api_key" | "item_key",
-  predicate: string,
-  value: number,
-): Promise<void> {
-  for (let batch = 0; batch < MAX_CLEANUP_BATCHES; batch += 1) {
-    const result = await db
-      .prepare(
-        `DELETE FROM ${table}
-         WHERE ${keyColumn} IN (
-           SELECT ${keyColumn}
-           FROM ${table}
-           WHERE ${predicate}
-           LIMIT ?
-         )`,
-      )
-      .bind(value, CLEANUP_BATCH_SIZE)
-      .run();
-
-    if (Number(result.meta.changes ?? 0) < CLEANUP_BATCH_SIZE) {
-      break;
-    }
-  }
-}
-
-async function deleteUploadLimitsInBatches(
-  db: D1Database,
-  before: number,
-): Promise<void> {
-  for (let batch = 0; batch < MAX_CLEANUP_BATCHES; batch += 1) {
-    const result = await db
-      .prepare(
-        `DELETE FROM upload_limits
-         WHERE (api_key, window_start) IN (
-           SELECT api_key, window_start
-           FROM upload_limits
-           WHERE window_start < ?
-           LIMIT ?
-         )`,
-      )
-      .bind(before, CLEANUP_BATCH_SIZE)
-      .run();
-
-    if (Number(result.meta.changes ?? 0) < CLEANUP_BATCH_SIZE) {
-      break;
-    }
-  }
+function invalidApiKey(): Response {
+  return text("No way, Jose. Fix your API key. Figure it out.", 401);
 }
 
 function sanitizeFilename(filename: string): string {
@@ -556,10 +469,6 @@ function sanitizeFilename(filename: string): string {
     .replaceAll(/[^a-zA-Z0-9._-]/g, "_")
     .replaceAll(/_+/g, "_")
     .slice(0, 255);
-}
-
-function randomId(length: number): string {
-  return crypto.randomUUID().replaceAll("-", "").slice(0, length);
 }
 
 function unixSeconds(): number {
@@ -572,16 +481,6 @@ function randomAd(apiKey = ""): string {
   }
 
   return ADS[Math.floor(Math.random() * ADS.length)];
-}
-
-async function sha256(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(value),
-  );
-  return Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
 }
 
 function json(value: unknown, status = 200): Response {

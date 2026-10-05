@@ -4,12 +4,13 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "check": "npm run types:check && npm run typecheck && npm run build && wrangler deploy --dry-run",
+    "check": "npm run types:check && npm run typecheck && npm test && npm run build && wrangler deploy --dry-run",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "deploy": "npm run build && wrangler deploy",
     "dev": "vite dev",
     "preview": "npm run build && vite preview",
+    "test": "node --test --disable-warning=ExperimentalWarning \"app/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
     "types": "wrangler types",
     "types:check": "wrangler types --check"
@@ -35,6 +36,7 @@
     "@tiptap/pm": "^2.12.0",
     "@tiptap/react": "^2.12.0",
     "@tiptap/starter-kit": "^2.12.0",
+    "aws4fetch": "^1.0.20",
     "dayjs": "^1.11.13",
     "embla-carousel": "^8.6.0",
     "embla-carousel-react": "^8.6.0",

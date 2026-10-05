@@ -64,7 +64,7 @@ export default {
   },
 
   async scheduled(_event: ScheduledEvent, env: WorkerEnv, _ctx: WorkerContext) {
-    await cleanupDatabase(env.DB);
+    await cleanupDatabase(env);
   },
 };
 

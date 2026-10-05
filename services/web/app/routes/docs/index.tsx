@@ -72,7 +72,8 @@ const databaseEndpoints: Endpoint[] = [
   {
     method: "POST",
     path: "/SECRET_INTERNAL_ENDPOINT_DO_NOT_USE_OR_YOU_WILL_BE_FIRED_add_item",
-    description: "Add a value up to 1 MB. Values expire after three days.",
+    description:
+      "Add a value up to 20 KB. Values expire after three days and can take up to a minute to become readable.",
     request: {
       data: "add your data here",
     },
@@ -97,7 +98,8 @@ const databaseEndpoints: Endpoint[] = [
   {
     method: "POST",
     path: "/gibs-key",
-    description: "Get a new API key",
+    description:
+      "Get a new API key. It works for writes immediately and for reads within about a minute.",
     request: null,
     response: {
       api_key: "avg_123456",
@@ -319,6 +321,13 @@ export default function Docs() {
                 Send requests to <Code>https://averagedatabase.com/api</Code>{" "}
                 with the header <Code>x-averagedb-api-key</Code> containing your
                 API key.
+              </Text>
+              <Text size="lg" mb="md">
+                Your data lives in Route 53 TXT records, which gets us a 100%
+                SLA on reads. Writes go through the Route 53 API, which is
+                rate limited for everyone at once. If you get a{" "}
+                <Code>503</Code>, wait for the <Code>Retry-After</Code> and try
+                again.
               </Text>
               <Text size="lg" mb="md">
                 Enterprise customers can bring their own API keys! Simply insert

@@ -16,6 +16,7 @@ import { Route as DocsRouteRouteImport } from './routes/docs/route'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as BlogAssRouteImport } from './routes/blog/ass'
 import { Route as BlogOopsWeDidItAgainRouteImport } from './routes/blog/oops-we-did-it-again'
+import { Route as BlogRoute53RouteImport } from './routes/blog/route-53'
 import { Route as BlogWeRichLmaoRouteImport } from './routes/blog/we-rich-lmao'
 import { Route as DocsIndexRouteImport } from './routes/docs/index'
 import { Route as StatusIndexRouteImport } from './routes/status/index'
@@ -56,6 +57,11 @@ const BlogOopsWeDidItAgainRoute = BlogOopsWeDidItAgainRouteImport.update({
   path: '/oops-we-did-it-again',
   getParentRoute: () => BlogRouteRoute,
 } as any)
+const BlogRoute53Route = BlogRoute53RouteImport.update({
+  id: '/route-53',
+  path: '/route-53',
+  getParentRoute: () => BlogRouteRoute,
+} as any)
 const BlogWeRichLmaoRoute = BlogWeRichLmaoRouteImport.update({
   id: '/we-rich-lmao',
   path: '/we-rich-lmao',
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/404': typeof R404Route
   '/blog/ass': typeof BlogAssRoute
   '/blog/oops-we-did-it-again': typeof BlogOopsWeDidItAgainRoute
+  '/blog/route-53': typeof BlogRoute53Route
   '/blog/we-rich-lmao': typeof BlogWeRichLmaoRoute
   '/status/incident-report-april-1-2026-control-plane-degradation': typeof StatusIncidentReportApril12026ControlPlaneDegradationRoute
   '/blog/': typeof BlogIndexRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/404': typeof R404Route
   '/blog/ass': typeof BlogAssRoute
   '/blog/oops-we-did-it-again': typeof BlogOopsWeDidItAgainRoute
+  '/blog/route-53': typeof BlogRoute53Route
   '/blog/we-rich-lmao': typeof BlogWeRichLmaoRoute
   '/status/incident-report-april-1-2026-control-plane-degradation': typeof StatusIncidentReportApril12026ControlPlaneDegradationRoute
   '/blog': typeof BlogIndexRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/404': typeof R404Route
   '/blog/ass': typeof BlogAssRoute
   '/blog/oops-we-did-it-again': typeof BlogOopsWeDidItAgainRoute
+  '/blog/route-53': typeof BlogRoute53Route
   '/blog/we-rich-lmao': typeof BlogWeRichLmaoRoute
   '/status/incident-report-april-1-2026-control-plane-degradation': typeof StatusIncidentReportApril12026ControlPlaneDegradationRoute
   '/blog/': typeof BlogIndexRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/blog/ass'
     | '/blog/oops-we-did-it-again'
+    | '/blog/route-53'
     | '/blog/we-rich-lmao'
     | '/status/incident-report-april-1-2026-control-plane-degradation'
     | '/blog/'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/blog/ass'
     | '/blog/oops-we-did-it-again'
+    | '/blog/route-53'
     | '/blog/we-rich-lmao'
     | '/status/incident-report-april-1-2026-control-plane-degradation'
     | '/blog'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/blog/ass'
     | '/blog/oops-we-did-it-again'
+    | '/blog/route-53'
     | '/blog/we-rich-lmao'
     | '/status/incident-report-april-1-2026-control-plane-degradation'
     | '/blog/'
@@ -216,6 +228,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogOopsWeDidItAgainRouteImport
       parentRoute: typeof BlogRouteRoute
     }
+    '/blog/route-53': {
+      id: '/blog/route-53'
+      path: '/route-53'
+      fullPath: '/blog/route-53'
+      preLoaderRoute: typeof BlogRoute53RouteImport
+      parentRoute: typeof BlogRouteRoute
+    }
     '/blog/we-rich-lmao': {
       id: '/blog/we-rich-lmao'
       path: '/we-rich-lmao'
@@ -250,6 +269,7 @@ declare module '@tanstack/react-router' {
 interface BlogRouteRouteChildren {
   BlogAssRoute: typeof BlogAssRoute
   BlogOopsWeDidItAgainRoute: typeof BlogOopsWeDidItAgainRoute
+  BlogRoute53Route: typeof BlogRoute53Route
   BlogWeRichLmaoRoute: typeof BlogWeRichLmaoRoute
   BlogIndexRoute: typeof BlogIndexRoute
 }
@@ -257,6 +277,7 @@ interface BlogRouteRouteChildren {
 const BlogRouteRouteChildren: BlogRouteRouteChildren = {
   BlogAssRoute: BlogAssRoute,
   BlogOopsWeDidItAgainRoute: BlogOopsWeDidItAgainRoute,
+  BlogRoute53Route: BlogRoute53Route,
   BlogWeRichLmaoRoute: BlogWeRichLmaoRoute,
   BlogIndexRoute: BlogIndexRoute,
 }

@@ -11,7 +11,8 @@ The only database built from the ground for the average developer.
 The whole site is one Cloudflare Worker deployment. TanStack Start prerenders
 the public pages as static assets, while the same Worker handles the small API,
 testimonial avatars, and the request-dependent incident redirect. Disposable
-database values live in D1 and uploads live in R2.
+database values live in Amazon Route 53 TXT records (100% SLA, reads only) and
+uploads live in R2.
 
 ### Support
 

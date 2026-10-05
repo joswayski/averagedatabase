@@ -4,6 +4,10 @@ import { Link } from '@tanstack/react-router';
 
 const factsheet = [
     {
+        title: "100% SLA",
+        description: "Your data lives in Route 53 TXT records, the only AWS service with a 100% SLA (reads only, don't ask)"
+    },
+    {
         title: "Hundreds of millions in funding",
         description: "Free tier rugpull delayed"
     },
